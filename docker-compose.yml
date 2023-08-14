@@ -1,0 +1,32 @@
+version: "3"
+services:
+  go:
+    build:
+      context: .
+      dockerfile: docker/go/Dockerfile.dev
+    image: dev_go
+    container_name: dev_go
+    ports:
+      - 8080:8080
+    volumes:
+      - ./:/usr/src/app
+    environment:
+      GO_ENV: dev
+
+  mysql:
+    build: ./docker/mysql
+    image: dev_mysql
+    container_name: dev_mysql
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: english
+      MYSQL_USER: ktj
+      MYSQL_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: password
+      TZ: Asia/Tokyo
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
