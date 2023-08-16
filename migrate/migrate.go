@@ -2,7 +2,7 @@ package main
 
 import (
 	"english/config"
-	"english/src/infrastructure/db"
+	"english/src/infrastructure/dbconn"
 	"english/src/infrastructure/entity"
 	"log"
 )
@@ -12,10 +12,10 @@ func init() {
 }
 
 func main() {
-	conn := db.NewDB()
-	defer db.Close(conn)
+	db := dbconn.NewDB()
+	defer dbconn.Close(db)
 
-	if err := conn.AutoMigrate(&entity.UserEntity{}); err != nil {
+	if err := db.AutoMigrate(&entity.UserEntity{}); err != nil {
 		log.Fatalf("Failed to migrate: %s", err)
 	}
 

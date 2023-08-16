@@ -2,8 +2,13 @@ package main
 
 import (
 	"english/config"
+	"english/src/infrastructure/dbconn"
+	"english/src/infrastructure/repository"
+	"english/src/presentation"
+	"english/src/presentation/controller"
+	"english/src/usecase/userusecase"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -12,19 +17,11 @@ func Top(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	config.SetLogger(config.LogFileName())
+	db := dbconn.NewDB()
+	ur := repository.NewUserMySQLRepository(db)
+	ulu := userusecase.NewUserJWTLoginUsecase(ur)
+	uc := controller.NewUserGinController(ulu)
+	router := presentation.NewGinRouter(uc)
 
-	log.Println(config.GoEnv())
-	log.Println(config.Port())
-	log.Println(config.APIDomain())
-	log.Println(config.FrontEndURL())
-	log.Println(config.Secret())
-	log.Println(config.LogFileName())
-	log.Println(config.MySQLDBName())
-	log.Println(config.MySQLUser())
-	log.Println(config.MySQLPass())
-	log.Println(config.MySQLHost())
-
-	http.HandleFunc("/", Top)
-	http.ListenAndServe(":8080", nil)
+	router.Run(fmt.Sprintf(":%v", config.Port()))
 }
