@@ -1,14 +1,14 @@
 package usermodel
 
 type User struct {
-	id              int
+	id              string
 	email           string
 	password        string
 	name            string
 	profileImageURL string
 }
 
-func NewUser(id int, email, password, name, profileImageURL string) *User {
+func NewUser(id, email, password, name, profileImageURL string) *User {
 	return &User{
 		id:              id,
 		email:           email,
@@ -18,7 +18,7 @@ func NewUser(id int, email, password, name, profileImageURL string) *User {
 	}
 }
 
-func (u *User) Id() int {
+func (u *User) Id() string {
 	return u.id
 }
 

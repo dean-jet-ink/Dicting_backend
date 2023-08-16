@@ -51,7 +51,7 @@ func (uu *UserJWTLoginUsecase) Login(req *UserLoginRequest) (string, error) {
 	return jwtToken, nil
 }
 
-func createJWT(userId int, expSec int) (string, error) {
+func createJWT(userId string, expSec int) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"user_id": userId,
 		"exp":     time.Now().Add(time.Second * time.Duration(expSec)).Unix(),
