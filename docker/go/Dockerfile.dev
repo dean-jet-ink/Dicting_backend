@@ -16,6 +16,8 @@ RUN apt-get update \
 && go get github.com/jinzhu/gorm \
 # MySQLドライバー
 && go get github.com/go-sql-driver/mysql \
+# GORM MySQLドライバー
+&& go get gorm.io/driver/mysql \
 # ホットリロード  Air
 && go install  github.com/cosmtrek/air@v1.44.0
 
