@@ -1,13 +1,12 @@
 package main
 
 import (
-	"english/myerror"
-	"errors"
 	"fmt"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
-	err1 := myerror.ErrRecordNotFound
-	err2 := myerror.ErrRecordNotFound
-	fmt.Println(errors.Is(err1, err2))
+	hash, _ := bcrypt.GenerateFromPassword([]byte("test"), 10)
+	fmt.Println(string(hash))
 }
