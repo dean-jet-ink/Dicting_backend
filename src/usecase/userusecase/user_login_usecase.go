@@ -67,5 +67,5 @@ func createJWT(userId string, expSec int) (string, error) {
 
 type UserLoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required,gte=8,lt=30"`
+	Password string `json:"password" validate:"gte=4,lt=30"`
 }
