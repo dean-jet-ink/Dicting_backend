@@ -12,6 +12,7 @@ import (
 
 type UserController interface {
 	Login(c *gin.Context)
+	Logout(c *gin.Context)
 }
 
 type UserGinController struct {
@@ -27,6 +28,11 @@ func NewUserGinController(ulu userusecase.UserLoginUsecase) UserController {
 func (uc *UserGinController) Login(c *gin.Context) {
 	req := &userusecase.UserLoginRequest{}
 	if err := c.BindJSON(req); err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := Validate(req); err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -49,4 +55,10 @@ func (uc *UserGinController) Login(c *gin.Context) {
 	c.SetSameSite(http.SameSiteNoneMode)
 
 	c.JSON(http.StatusOK, jwtToken)
+}
+
+func (uc *UserGinController) Logout(c *gin.Context) {
+	// cookieのJWTトークン削除
+	// MaxAgeに負の数を指定 = 即時削除
+	c.SetCookie("token", "", -1, "/", config.APIDomain(), config.GoEnv() != "dev", true)
 }
