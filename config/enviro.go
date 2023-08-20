@@ -10,7 +10,7 @@ import (
 
 func init() {
 	if os.Getenv("GO_ENV") == "dev" {
-		if err := godotenv.Load(); err != nil {
+		if err := godotenv.Load("/usr/src/app/.env"); err != nil {
 			log.Fatalf("Failed to load env file: %s", err)
 		}
 	}
