@@ -1,4 +1,4 @@
-package userusecase
+package usecase
 
 import (
 	"english/config"
@@ -11,34 +11,36 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserLoginUsecase interface {
-	Login(req *UserLoginRequest) (string, error)
+type LoginUsecase interface {
+	Login(req *LoginRequest, isSSO bool) (string, error)
 }
 
-type UserJWTLoginUsecase struct {
+type JWTLoginUsecase struct {
 	ur usermodel.UserRepository
 }
 
-func NewUserJWTLoginUsecase(ur usermodel.UserRepository) UserLoginUsecase {
-	return &UserJWTLoginUsecase{
+func NewJWTLoginUsecase(ur usermodel.UserRepository) LoginUsecase {
+	return &JWTLoginUsecase{
 		ur: ur,
 	}
 }
 
-func (uu *UserJWTLoginUsecase) Login(req *UserLoginRequest) (string, error) {
-	user, err := uu.ur.FindByEmail(req.Email)
+func (lu *JWTLoginUsecase) Login(req *LoginRequest, isSSO bool) (string, error) {
+	user, err := lu.ur.FindByEmail(req.Email)
 	if err != nil {
 		return "", err
 	}
 
-	// ハッシュ化して保存しているパスワードと比較
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password()), []byte(req.Password))
-	if err != nil {
-		if errors.Is(bcrypt.ErrMismatchedHashAndPassword, err) {
-			return "", myerror.ErrMismatchedPassword
-		}
+	if !isSSO {
+		// ハッシュ化して保存しているパスワードと比較
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password()), []byte(req.Password))
+		if err != nil {
+			if errors.Is(bcrypt.ErrMismatchedHashAndPassword, err) {
+				return "", myerror.ErrMismatchedPassword
+			}
 
-		return "", err
+			return "", err
+		}
 	}
 
 	// JWTの作成
@@ -65,7 +67,7 @@ func createJWT(userId string, expSec int) (string, error) {
 	return jwtToken, nil
 }
 
-type UserLoginRequest struct {
+type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"gte=4,lt=30"`
 }
