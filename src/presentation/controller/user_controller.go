@@ -33,6 +33,7 @@ func (uc *UserGinController) Login(c *gin.Context) {
 	req := &usecase.LoginRequest{}
 	if err := c.BindJSON(req); err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
+
 		return
 	}
 
@@ -59,12 +60,12 @@ func (uc *UserGinController) Login(c *gin.Context) {
 func (uc *UserGinController) Logout(c *gin.Context) {
 	// cookieのJWTトークン削除
 	// MaxAgeに負の数を指定 = 即時削除
-	c.SetCookie("token", "", -1, "/", config.APIDomain(), config.GoEnv() != "dev", true)
+	uc.deleteCookie(c, "token", "/")
 }
 
 func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 	req := &usecase.RedirectOAuthConsentRequest{}
-	if err := c.BindQuery(req); err != nil {
+	if err := c.ShouldBindQuery(req); err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -87,16 +88,16 @@ func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 
 	// callbackで使用する検証用state
 	c.SetCookie("oauth_state", redirectOut.State(), maxAge, path, domain, isSecure, true)
-
 	// callbackで使用するidPName
 	c.SetCookie("idp_name", req.IdPName, maxAge, path, domain, isSecure, true)
+	c.SetSameSite(http.SameSiteNoneMode)
 
 	c.Redirect(http.StatusFound, redirectOut.RedirectURL())
 }
 
 func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	req := &usecase.CallbackRequest{}
-	if err := c.BindJSON(req); err != nil {
+	if err := c.ShouldBindQuery(req); err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -131,8 +132,15 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 		Email:    callbackOut.Email,
 		Password: "",
 	}, true)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, "User is not registered through SSO")
+	}
 
 	uc.setJWT(c, jwtToken)
+
+	// 不要なoauth_stateとidp_nameを削除
+	uc.deleteCookie(c, "oauth_state", "/auth/")
+	uc.deleteCookie(c, "idp_name", "/auth/")
 
 	c.JSON(http.StatusOK, jwtToken)
 }
@@ -144,4 +152,8 @@ func (uc *UserGinController) setJWT(c *gin.Context, jwtToken string) {
 	c.SetCookie("token", jwtToken, 60*60*24, "/", config.APIDomain(), config.GoEnv() != "dev", true)
 	// クロスオリジン許可
 	c.SetSameSite(http.SameSiteNoneMode)
+}
+
+func (uc *UserGinController) deleteCookie(c *gin.Context, name, path string) {
+	c.SetCookie(name, "", -1, path, config.APIDomain(), config.GoEnv() != "dev", true)
 }

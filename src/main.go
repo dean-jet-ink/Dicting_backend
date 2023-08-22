@@ -17,6 +17,7 @@ func Top(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	fmt.Println("hello")
 	db := dbconn.NewDB()
 	ur := repository.NewUserMySQLRepository(db)
 	lu := usecase.NewJWTLoginUsecase(ur)

@@ -80,7 +80,7 @@ func (lu *OIDCLoginUsecase) Callback(req *CallbackRequest) (*CallbackOutput, err
 }
 
 type RedirectOAuthConsentRequest struct {
-	IdPName string `json:"idp_name" validate:"required"`
+	IdPName string `form:"idp_name" validate:"required"`
 }
 
 type RedirectOAuthConsentOutput struct {
@@ -98,9 +98,9 @@ func (ro *RedirectOAuthConsentOutput) State() string {
 
 type CallbackRequest struct {
 	IdpName     string
-	QueryState  string `json:"state" validate:"required"`
+	QueryState  string `form:"state" validate:"required"`
 	CookieState string
-	Code        string `json:"code" validate:"required"`
+	Code        string `form:"code" validate:"required"`
 }
 
 type CallbackOutput struct {

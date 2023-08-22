@@ -11,7 +11,7 @@ import (
 	"gopkg.in/square/go-jose.v2"
 )
 
-var scopes = []string{oidc.ScopeOpenID}
+var scopes = []string{oidc.ScopeOpenID, "email"}
 
 type IdP struct {
 	idPName      string
