@@ -6,6 +6,7 @@ import (
 	"english/cmd/infrastructure/entity"
 	"english/myerror"
 	"errors"
+	"strings"
 
 	"github.com/jinzhu/copier"
 	"gorm.io/gorm"
@@ -43,6 +44,9 @@ func (ur *UserMySQLRepository) Create(user *model.User) error {
 	}
 
 	if err := ur.db.Create(entity).Error; err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
+			return myerror.ErrDuplicatedKey
+		}
 		return err
 	}
 

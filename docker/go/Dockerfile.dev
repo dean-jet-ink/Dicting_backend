@@ -10,16 +10,12 @@ COPY . .
 RUN apt-get update \
 && apt-get install -y git \
 && rm -rf /var/lib/apt/lists/* \
-# Webフレームワーク  gin
-&& go get github.com/gin-gonic/gin \
-# ORM  GORM
-&& go get github.com/jinzhu/gorm \
-# MySQLドライバー
-&& go get github.com/go-sql-driver/mysql \
-# GORM MySQLドライバー
-&& go get gorm.io/driver/mysql \
 # ホットリロード  Air
-&& go install  github.com/cosmtrek/air@v1.44.0
+&& go install  github.com/cosmtrek/air@v1.44.0 \
+# Language Server
+&& go install -v golang.org/x/tools/gopls@latest \
+# デバッグ
+&& go install -v github.com/go-delve/delve/cmd/dlv@latest
 
 # Airにて実行(事前にルートディレクトリに".air.toml"を準備)
-CMD ["air", "-c", ".air.toml"]
+CMD ["air", "-c", ".air.toml"]git 

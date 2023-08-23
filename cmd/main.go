@@ -19,7 +19,8 @@ func main() {
 	ur := gateway.NewUserMySQLRepository(db)
 	su := usecase.NewStandardSignupUsecase(ur)
 	lu := usecase.NewStandardLoginUsecase(ur)
-	uc := controller.NewUserGinController(su, lu)
+	ssu := usecase.NewOIDCAuthUsecase(ur)
+	uc := controller.NewUserGinController(su, lu, ssu)
 	router := presentation.NewGinRouter(uc)
 
 	router.Run(fmt.Sprintf(":%v", config.Port()))

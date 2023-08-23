@@ -1,9 +1,11 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -59,4 +61,23 @@ func MySQLPass() string {
 
 func MySQLHost() string {
 	return os.Getenv("MYSQL_HOST")
+}
+
+func OAuthRedirectURL() string {
+	return os.Getenv("OAUTH_REDIRECT_URL")
+}
+
+func ISSURL(idpName string) string {
+	idpName = strings.ToUpper(idpName)
+	return os.Getenv(fmt.Sprintf("%s_ISS_URL", idpName))
+}
+
+func ClientId(idpName string) string {
+	idpName = strings.ToUpper(idpName)
+	return os.Getenv(fmt.Sprintf("%s_CLIENT_ID", idpName))
+}
+
+func ClientSecret(idpName string) string {
+	idpName = strings.ToUpper(idpName)
+	return os.Getenv(fmt.Sprintf("%s_CLIENT_SECRET", idpName))
 }

@@ -10,7 +10,7 @@ import (
 )
 
 type LoginUsecase interface {
-	Login(req *dto.LoginRequest) (string, error)
+	Login(req *dto.LoginRequest, isSSO bool) (string, error)
 }
 
 type StandardLoginUsecase struct {
@@ -23,20 +23,22 @@ func NewStandardLoginUsecase(ur repository.UserRepository) LoginUsecase {
 	}
 }
 
-func (uu *StandardLoginUsecase) Login(req *dto.LoginRequest) (string, error) {
+func (uu *StandardLoginUsecase) Login(req *dto.LoginRequest, isSSO bool) (string, error) {
 	user, err := uu.ur.FindByEmail(req.Email)
 	if err != nil {
 		return "", err
 	}
 
-	// ハッシュ化して保存しているパスワードと比較
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password()), []byte(req.Password))
-	if err != nil {
-		if errors.Is(bcrypt.ErrMismatchedHashAndPassword, err) {
-			return "", myerror.ErrMismatchedPassword
-		}
+	if !isSSO {
+		// ハッシュ化して保存しているパスワードと比較
+		err = bcrypt.CompareHashAndPassword([]byte(user.Password()), []byte(req.Password))
+		if err != nil {
+			if errors.Is(bcrypt.ErrMismatchedHashAndPassword, err) {
+				return "", myerror.ErrMismatchedPassword
+			}
 
-		return "", err
+			return "", err
+		}
 	}
 
 	// JWTの作成

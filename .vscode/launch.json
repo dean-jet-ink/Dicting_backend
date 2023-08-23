@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "English",
+      "type": "go",
+      // 実行中のプロセスにデバッガーをアタッチする設定
+      "request": "attach",
+      // GOの拡張機能Delveのデバッグモード設定
+      "mode": "remote",
+      "host": "localhost",
+      "port": 2345,
+      "remotePath": "/usr/src/app"
+    }
+  ]
+}
