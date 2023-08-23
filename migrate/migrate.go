@@ -1,9 +1,9 @@
 package main
 
 import (
+	"english/cmd/infrastructure/dbconn"
+	"english/cmd/infrastructure/entity"
 	"english/config"
-	"english/src/infrastructure/dbconn"
-	"english/src/infrastructure/entity"
 	"log"
 )
 

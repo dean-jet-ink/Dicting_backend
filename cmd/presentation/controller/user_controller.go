@@ -1,16 +1,19 @@
 package controller
 
 import (
+	"english/cmd/usecase"
+	"english/cmd/usecase/dto"
 	"english/config"
 	"english/myerror"
-	"english/src/usecase"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UserController interface {
+	Signup(c *gin.Context)
 	Login(c *gin.Context)
 	Logout(c *gin.Context)
 	RedirectOAuthConsent(c *gin.Context)
@@ -18,20 +21,43 @@ type UserController interface {
 }
 
 type UserGinController struct {
-	lu usecase.LoginUsecase
-	su usecase.SSOLoginUsecase
+	su  usecase.SignupUsecase
+	lu  usecase.LoginUsecase
+	ssu usecase.SSOLoginUsecase
 }
 
-func NewUserGinController(lu usecase.LoginUsecase, su usecase.SSOLoginUsecase) UserController {
+func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOLoginUsecase) UserController {
 	return &UserGinController{
-		lu: lu,
-		su: su,
+		su:  su,
+		lu:  lu,
+		ssu: ssu,
 	}
 }
 
-func (uc *UserGinController) Login(c *gin.Context) {
-	req := &usecase.LoginRequest{}
+func (uc *UserGinController) Signup(c *gin.Context) {
+	req := &dto.SignupRequest{}
 	if err := c.BindJSON(req); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	jwtToken, err := uc.su.Signup(req)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	uc.setJWT(c, jwtToken)
+
+	c.JSON(http.StatusOK, jwtToken)
+}
+
+func (uc *UserGinController) Login(c *gin.Context) {
+	req := &dto.LoginRequest{}
+	if err := c.BindJSON(req); err != nil {
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 
 		return
@@ -64,7 +90,7 @@ func (uc *UserGinController) Logout(c *gin.Context) {
 }
 
 func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
-	req := &usecase.RedirectOAuthConsentRequest{}
+	req := &dto.RedirectOAuthConsentRequest{}
 	if err := c.ShouldBindQuery(req); err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
@@ -75,7 +101,7 @@ func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 		return
 	}
 
-	redirectOut, err := uc.su.RedirectOAuthConsent(req)
+	resp, err := uc.ssu.RedirectOAuthConsent(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
@@ -87,16 +113,16 @@ func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 	isSecure := config.GoEnv() != "dev"
 
 	// callbackで使用する検証用state
-	c.SetCookie("oauth_state", redirectOut.State(), maxAge, path, domain, isSecure, true)
+	c.SetCookie("oauth_state", resp.State, maxAge, path, domain, isSecure, true)
 	// callbackで使用するidPName
 	c.SetCookie("idp_name", req.IdPName, maxAge, path, domain, isSecure, true)
 	c.SetSameSite(http.SameSiteNoneMode)
 
-	c.Redirect(http.StatusFound, redirectOut.RedirectURL())
+	c.Redirect(http.StatusFound, resp.RedirectURL)
 }
 
 func (uc *UserGinController) OAuthCallback(c *gin.Context) {
-	req := &usecase.CallbackRequest{}
+	req := &dto.CallbackRequest{}
 	if err := c.ShouldBindQuery(req); err != nil {
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
@@ -117,19 +143,19 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 		return
 	}
 
-	callbackOut, err := uc.su.Callback(req)
+	resp, err := uc.ssu.Callback(req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if !callbackOut.Verified {
+	if !resp.Verified {
 		c.JSON(http.StatusForbidden, "Email is unverified")
 		return
 	}
 
-	jwtToken, err := uc.lu.Login(&usecase.LoginRequest{
-		Email:    callbackOut.Email,
+	jwtToken, err := uc.lu.Login(&dto.LoginRequest{
+		Email:    resp.Email,
 		Password: "",
 	}, true)
 	if err != nil {

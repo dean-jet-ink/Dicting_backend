@@ -1,7 +1,7 @@
 package presentation
 
 import (
-	"english/src/presentation/controller"
+	"english/cmd/presentation/controller"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +14,7 @@ func NewGinRouter(uc controller.UserController) *gin.Engine {
 		templ.Execute(c.Writer, nil)
 	})
 
+	router.POST("/signup", uc.Signup)
 	router.POST("/login", uc.Login)
 	router.POST("/logout", uc.Logout)
 	router.GET("/auth", uc.RedirectOAuthConsent)

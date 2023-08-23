@@ -7,7 +7,7 @@ tmp_dir = "tmp"
 
 [build]
 # コンパイラでの最適化(-N)、インライン最適化(-l)を無効
-cmd = 'go build -gcflags "all=-N -l" -o ./tmp/main ./src'
+cmd = 'go build -gcflags "all=-N -l" -o ./tmp/main ./cmd'
 # Binary file yields from `cmd`.
 bin = "tmp/main"
 # PORT 8080にてdlv起動
