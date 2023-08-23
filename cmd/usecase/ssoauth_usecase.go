@@ -9,17 +9,17 @@ import (
 	"errors"
 )
 
-type SSOLoginUsecase interface {
+type SSOAuthUsecase interface {
 	RedirectOAuthConsent(req *dto.RedirectOAuthConsentRequest) (*dto.RedirectOAuthConsentResponse, error)
 	Callback(req *dto.CallbackRequest) (*dto.CallbackResponse, error)
 }
 
-type OIDCLoginUsecase struct {
+type OIDCAuthUsecase struct {
 	ur   repository.UserRepository
 	idPs map[string]*model.IdP
 }
 
-func NewOIDCLoginUsecase(ur repository.UserRepository) SSOLoginUsecase {
+func NewOIDCAuthUsecase(ur repository.UserRepository) SSOAuthUsecase {
 	idPNames := []string{"google", "line"}
 
 	idPs := map[string]*model.IdP{}
@@ -29,13 +29,13 @@ func NewOIDCLoginUsecase(ur repository.UserRepository) SSOLoginUsecase {
 		idPs[name] = idP
 	}
 
-	return &OIDCLoginUsecase{
+	return &OIDCAuthUsecase{
 		ur:   ur,
 		idPs: idPs,
 	}
 }
 
-func (lu *OIDCLoginUsecase) RedirectOAuthConsent(req *dto.RedirectOAuthConsentRequest) (*dto.RedirectOAuthConsentResponse, error) {
+func (lu *OIDCAuthUsecase) RedirectOAuthConsent(req *dto.RedirectOAuthConsentRequest) (*dto.RedirectOAuthConsentResponse, error) {
 	idPName := req.IdPName
 	idP, ok := lu.idPs[idPName]
 	if !ok {
@@ -57,7 +57,7 @@ func (lu *OIDCLoginUsecase) RedirectOAuthConsent(req *dto.RedirectOAuthConsentRe
 	return output, nil
 }
 
-func (lu *OIDCLoginUsecase) Callback(req *dto.CallbackRequest) (*dto.CallbackResponse, error) {
+func (lu *OIDCAuthUsecase) Callback(req *dto.CallbackRequest) (*dto.CallbackResponse, error) {
 	if req.QueryState != req.CookieState {
 		return nil, errors.New("invalid state")
 	}

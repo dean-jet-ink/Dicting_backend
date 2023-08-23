@@ -10,7 +10,7 @@ import (
 )
 
 type SignupUsecase interface {
-	Signup(req *dto.SignupRequest) (string, error)
+	Signup(req *dto.SignupRequest, isSSO bool) (string, error)
 }
 
 type StandardSignupUsecase struct {
@@ -23,19 +23,22 @@ func NewStandardSignupUsecase(ur repository.UserRepository) SignupUsecase {
 	}
 }
 
-func (su *StandardSignupUsecase) Signup(req *dto.SignupRequest) (string, error) {
+func (su *StandardSignupUsecase) Signup(req *dto.SignupRequest, isSSO bool) (string, error) {
 	ulid, err := algo.GenerateULID()
 	if err != nil {
 		return "", err
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
-	if err != nil {
-		return "", err
+	user := model.NewUser(ulid, req.Email, "", req.Name, "")
+	if !isSSO {
+		hash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 10)
+		if err != nil {
+			return "", err
+		}
+		pass := string(hash)
+		user.SetPassword(pass)
 	}
-	pass := string(hash)
 
-	user := model.NewUser(ulid, req.Email, pass, req.Name, "")
 	if err := su.ur.Create(user); err != nil {
 		return "", err
 	}

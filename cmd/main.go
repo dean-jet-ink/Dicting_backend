@@ -19,7 +19,7 @@ func main() {
 	ur := gateway.NewUserMySQLRepository(db)
 	su := usecase.NewStandardSignupUsecase(ur)
 	lu := usecase.NewStandardLoginUsecase(ur)
-	ssu := usecase.NewOIDCLoginUsecase(ur)
+	ssu := usecase.NewOIDCAuthUsecase(ur)
 	uc := controller.NewUserGinController(su, lu, ssu)
 	router := presentation.NewGinRouter(uc)
 

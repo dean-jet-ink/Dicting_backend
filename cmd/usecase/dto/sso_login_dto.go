@@ -2,6 +2,7 @@ package dto
 
 type RedirectOAuthConsentRequest struct {
 	IdPName string `form:"idp_name" validate:"required"`
+	IsLogin bool   `form:"is_login"`
 }
 
 type RedirectOAuthConsentResponse struct {
@@ -17,6 +18,7 @@ type CallbackRequest struct {
 }
 
 type CallbackResponse struct {
+	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Verified bool   `json:"email_verified"`
 }

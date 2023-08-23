@@ -8,6 +8,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,10 +24,10 @@ type UserController interface {
 type UserGinController struct {
 	su  usecase.SignupUsecase
 	lu  usecase.LoginUsecase
-	ssu usecase.SSOLoginUsecase
+	ssu usecase.SSOAuthUsecase
 }
 
-func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOLoginUsecase) UserController {
+func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOAuthUsecase) UserController {
 	return &UserGinController{
 		su:  su,
 		lu:  lu,
@@ -37,14 +38,19 @@ func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu
 func (uc *UserGinController) Signup(c *gin.Context) {
 	req := &dto.SignupRequest{}
 	if err := c.BindJSON(req); err != nil {
-		log.Println(err)
+		log.Printf("Error: %v\n", err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	jwtToken, err := uc.su.Signup(req)
+	jwtToken, err := uc.su.Signup(req, false)
 	if err != nil {
-		log.Println(err)
+		if errors.Is(myerror.ErrDuplicatedKey, err) {
+			log.Printf("Error: %v\n", err)
+			c.JSON(http.StatusBadRequest, err.Error())
+			return
+		}
+		log.Printf("Error: %v\n", err)
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -57,7 +63,7 @@ func (uc *UserGinController) Signup(c *gin.Context) {
 func (uc *UserGinController) Login(c *gin.Context) {
 	req := &dto.LoginRequest{}
 	if err := c.BindJSON(req); err != nil {
-		log.Println(err)
+		log.Printf("Error: %v\n", err)
 		c.JSON(http.StatusBadRequest, err.Error())
 
 		return
@@ -116,6 +122,8 @@ func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 	c.SetCookie("oauth_state", resp.State, maxAge, path, domain, isSecure, true)
 	// callbackで使用するidPName
 	c.SetCookie("idp_name", req.IdPName, maxAge, path, domain, isSecure, true)
+	// ログインフラグ
+	c.SetCookie("is_login", strconv.FormatBool(req.IsLogin), maxAge, path, domain, isSecure, true)
 	c.SetSameSite(http.SameSiteNoneMode)
 
 	c.Redirect(http.StatusFound, resp.RedirectURL)
@@ -124,13 +132,15 @@ func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	req := &dto.CallbackRequest{}
 	if err := c.ShouldBindQuery(req); err != nil {
+		log.Printf("Error: %v\n", err.Error())
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	state, stateErr := c.Cookie("oauth_state")
-	idPName, idPErr := c.Cookie("idp_name")
-	if stateErr != nil || idPErr != nil {
+	state, err1 := c.Cookie("oauth_state")
+	idPName, err2 := c.Cookie("idp_name")
+	isLoginStr, err3 := c.Cookie("is_login")
+	if err1 != nil || err2 != nil || err3 != nil {
 		c.JSON(http.StatusBadRequest, "cookie expired")
 		return
 	}
@@ -139,27 +149,64 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	req.IdpName = idPName
 
 	if err := Validate(req); err != nil {
+		log.Printf("Error: %v\n", err.Error())
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	resp, err := uc.ssu.Callback(req)
 	if err != nil {
+		log.Printf("Error: %v\n", err.Error())
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if !resp.Verified {
-		c.JSON(http.StatusForbidden, "Email is unverified")
+	isLogin, err := strconv.ParseBool(isLoginStr)
+	if err != nil {
+		log.Printf("Error: %v\n", err.Error())
+		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	jwtToken, err := uc.lu.Login(&dto.LoginRequest{
-		Email:    resp.Email,
-		Password: "",
-	}, true)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, "User is not registered through SSO")
+	var jwtToken string
+	if isLogin {
+		req := &dto.LoginRequest{
+			Email:    resp.Email,
+			Password: "",
+		}
+
+		jwtToken, err = uc.lu.Login(req, true)
+		if err != nil {
+			if errors.Is(myerror.ErrRecordNotFound, err) {
+				log.Printf("Error: %v\n", err.Error())
+				c.JSON(http.StatusUnauthorized, "User is not registered through SSO")
+			} else {
+				log.Printf("Error: %v\n", err.Error())
+				c.JSON(http.StatusInternalServerError, err.Error())
+			}
+			return
+		}
+	} else {
+		if !resp.Verified {
+			log.Printf("Error: %v\n", "Email is unverified")
+			c.JSON(http.StatusForbidden, "Email is unverified")
+			return
+		}
+		req := &dto.SignupRequest{
+			Email: resp.Email,
+			Name:  resp.Name,
+		}
+		jwtToken, err = uc.su.Signup(req, true)
+		if err != nil {
+			if errors.Is(myerror.ErrDuplicatedKey, err) {
+				log.Printf("Error: %v\n", err)
+				c.JSON(http.StatusBadRequest, err.Error())
+				return
+			}
+			log.Printf("Error: %v\n", err)
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
 	}
 
 	uc.setJWT(c, jwtToken)
@@ -167,8 +214,13 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	// 不要なoauth_stateとidp_nameを削除
 	uc.deleteCookie(c, "oauth_state", "/auth/")
 	uc.deleteCookie(c, "idp_name", "/auth/")
+	uc.deleteCookie(c, "is_login", "/auth/")
 
-	c.JSON(http.StatusOK, jwtToken)
+	if isLogin {
+		c.JSON(http.StatusOK, jwtToken)
+	} else {
+		c.JSON(http.StatusCreated, jwtToken)
+	}
 }
 
 func (uc *UserGinController) setJWT(c *gin.Context, jwtToken string) {
