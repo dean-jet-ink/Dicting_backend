@@ -47,6 +47,10 @@ func LogFileName() string {
 	return os.Getenv("LOG_FILE")
 }
 
+func FilePath() string {
+	return os.Getenv("FILE_PATH")
+}
+
 func MySQLDBName() string {
 	return os.Getenv("MYSQL_DB")
 }
