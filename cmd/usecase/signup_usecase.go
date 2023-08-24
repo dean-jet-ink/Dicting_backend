@@ -13,17 +13,17 @@ type SignupUsecase interface {
 	Signup(req *dto.SignupRequest, isSSO bool) (string, error)
 }
 
-type StandardSignupUsecase struct {
+type SignupUsecaseImpl struct {
 	ur repository.UserRepository
 }
 
-func NewStandardSignupUsecase(ur repository.UserRepository) SignupUsecase {
-	return &StandardSignupUsecase{
+func NewSignupUsecase(ur repository.UserRepository) SignupUsecase {
+	return &SignupUsecaseImpl{
 		ur: ur,
 	}
 }
 
-func (su *StandardSignupUsecase) Signup(req *dto.SignupRequest, isSSO bool) (string, error) {
+func (su *SignupUsecaseImpl) Signup(req *dto.SignupRequest, isSSO bool) (string, error) {
 	ulid, err := algo.GenerateULID()
 	if err != nil {
 		return "", err
@@ -37,6 +37,9 @@ func (su *StandardSignupUsecase) Signup(req *dto.SignupRequest, isSSO bool) (str
 		}
 		pass := string(hash)
 		user.SetPassword(pass)
+	} else {
+		user.SetIss(req.Iss)
+		user.SetSub(req.Sub)
 	}
 
 	if err := su.ur.Create(user); err != nil {

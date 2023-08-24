@@ -3,8 +3,8 @@ package main
 import (
 	"english/cmd/infrastructure/dbconn"
 	"english/cmd/infrastructure/gateway"
-	"english/cmd/presentation"
 	"english/cmd/presentation/controller"
+	"english/cmd/presentation/router"
 	"english/cmd/usecase"
 	"english/config"
 	"fmt"
@@ -17,11 +17,13 @@ func init() {
 func main() {
 	db := dbconn.NewDB()
 	ur := gateway.NewUserMySQLRepository(db)
-	su := usecase.NewStandardSignupUsecase(ur)
-	lu := usecase.NewStandardLoginUsecase(ur)
-	ssu := usecase.NewOIDCAuthUsecase(ur)
-	uc := controller.NewUserGinController(su, lu, ssu)
-	router := presentation.NewGinRouter(uc)
+	su := usecase.NewSignupUsecase(ur)
+	lu := usecase.NewLoginUsecase(ur)
+	ssu := usecase.NewSSOAuthUsecase(ur)
+	uu := usecase.NewUpdateUserProfileUsecase(ur)
+	upu := usecase.NewUpdateProfileImgUsecase(ur)
+	uc := controller.NewUserGinController(su, lu, ssu, uu, upu)
+	router := router.NewGinRouter(uc)
 
 	router.Run(fmt.Sprintf(":%v", config.Port()))
 }

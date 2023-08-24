@@ -1,14 +1,18 @@
 package controller
 
 import (
+	"english/algo"
 	"english/cmd/usecase"
 	"english/cmd/usecase/dto"
 	"english/config"
 	"english/myerror"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,26 +23,32 @@ type UserController interface {
 	Logout(c *gin.Context)
 	RedirectOAuthConsent(c *gin.Context)
 	OAuthCallback(c *gin.Context)
+	UpdateProfile(c *gin.Context)
+	UpdateProfileImg(c *gin.Context)
 }
 
 type UserGinController struct {
 	su  usecase.SignupUsecase
 	lu  usecase.LoginUsecase
 	ssu usecase.SSOAuthUsecase
+	uu  usecase.UpdateUserUsecase
+	upu usecase.UpdateProfileImgUsecase
 }
 
-func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOAuthUsecase) UserController {
+func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOAuthUsecase, uu usecase.UpdateUserUsecase, upu usecase.UpdateProfileImgUsecase) UserController {
 	return &UserGinController{
 		su:  su,
 		lu:  lu,
 		ssu: ssu,
+		uu:  uu,
+		upu: upu,
 	}
 }
 
 func (uc *UserGinController) Signup(c *gin.Context) {
 	req := &dto.SignupRequest{}
 	if err := c.BindJSON(req); err != nil {
-		log.Printf("Error: %v\n", err)
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -46,11 +56,11 @@ func (uc *UserGinController) Signup(c *gin.Context) {
 	jwtToken, err := uc.su.Signup(req, false)
 	if err != nil {
 		if errors.Is(myerror.ErrDuplicatedKey, err) {
-			log.Printf("Error: %v\n", err)
+			log.Println(err)
 			c.JSON(http.StatusBadRequest, err.Error())
 			return
 		}
-		log.Printf("Error: %v\n", err)
+		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -63,13 +73,14 @@ func (uc *UserGinController) Signup(c *gin.Context) {
 func (uc *UserGinController) Login(c *gin.Context) {
 	req := &dto.LoginRequest{}
 	if err := c.BindJSON(req); err != nil {
-		log.Printf("Error: %v\n", err)
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 
 		return
 	}
 
 	if err := Validate(req); err != nil {
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -81,6 +92,8 @@ func (uc *UserGinController) Login(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusInternalServerError, err.Error())
 		}
+
+		log.Println(err)
 		return
 	}
 
@@ -98,17 +111,20 @@ func (uc *UserGinController) Logout(c *gin.Context) {
 func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 	req := &dto.RedirectOAuthConsentRequest{}
 	if err := c.ShouldBindQuery(req); err != nil {
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if err := Validate(req); err != nil {
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	resp, err := uc.ssu.RedirectOAuthConsent(req)
 	if err != nil {
+		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -132,7 +148,7 @@ func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	req := &dto.CallbackRequest{}
 	if err := c.ShouldBindQuery(req); err != nil {
-		log.Printf("Error: %v\n", err.Error())
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -141,7 +157,14 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	idPName, err2 := c.Cookie("idp_name")
 	isLoginStr, err3 := c.Cookie("is_login")
 	if err1 != nil || err2 != nil || err3 != nil {
+		log.Println(errors.New("cookie expired"))
 		c.JSON(http.StatusBadRequest, "cookie expired")
+		return
+	}
+	isLogin, err := strconv.ParseBool(isLoginStr)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -149,21 +172,14 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	req.IdpName = idPName
 
 	if err := Validate(req); err != nil {
-		log.Printf("Error: %v\n", err.Error())
+		log.Println(err)
 		c.JSON(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	resp, err := uc.ssu.Callback(req)
 	if err != nil {
-		log.Printf("Error: %v\n", err.Error())
-		c.JSON(http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	isLogin, err := strconv.ParseBool(isLoginStr)
-	if err != nil {
-		log.Printf("Error: %v\n", err.Error())
+		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -173,37 +189,43 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 		req := &dto.LoginRequest{
 			Email:    resp.Email,
 			Password: "",
+			Iss:      resp.Iss,
+			Sub:      resp.Sub,
 		}
 
 		jwtToken, err = uc.lu.Login(req, true)
 		if err != nil {
 			if errors.Is(myerror.ErrRecordNotFound, err) {
-				log.Printf("Error: %v\n", err.Error())
-				c.JSON(http.StatusUnauthorized, "User is not registered through SSO")
+				message := "user is not registered through SSO"
+				log.Println(errors.New(message))
+				c.JSON(http.StatusUnauthorized, message)
 			} else {
-				log.Printf("Error: %v\n", err.Error())
+				log.Println(err)
 				c.JSON(http.StatusInternalServerError, err.Error())
 			}
 			return
 		}
 	} else {
 		if !resp.Verified {
-			log.Printf("Error: %v\n", "Email is unverified")
-			c.JSON(http.StatusForbidden, "Email is unverified")
+			message := "email is unverified"
+			log.Println(errors.New(message))
+			c.JSON(http.StatusForbidden, message)
 			return
 		}
 		req := &dto.SignupRequest{
 			Email: resp.Email,
 			Name:  resp.Name,
+			Iss:   resp.Iss,
+			Sub:   resp.Sub,
 		}
 		jwtToken, err = uc.su.Signup(req, true)
 		if err != nil {
 			if errors.Is(myerror.ErrDuplicatedKey, err) {
-				log.Printf("Error: %v\n", err)
+				log.Println(err)
 				c.JSON(http.StatusBadRequest, err.Error())
 				return
 			}
-			log.Printf("Error: %v\n", err)
+			log.Println(err)
 			c.JSON(http.StatusInternalServerError, err.Error())
 			return
 		}
@@ -217,9 +239,9 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	uc.deleteCookie(c, "is_login", "/auth/")
 
 	if isLogin {
-		c.JSON(http.StatusOK, jwtToken)
+		c.String(http.StatusOK, jwtToken)
 	} else {
-		c.JSON(http.StatusCreated, jwtToken)
+		c.String(http.StatusCreated, jwtToken)
 	}
 }
 
@@ -234,4 +256,124 @@ func (uc *UserGinController) setJWT(c *gin.Context, jwtToken string) {
 
 func (uc *UserGinController) deleteCookie(c *gin.Context, name, path string) {
 	c.SetCookie(name, "", -1, path, config.APIDomain(), config.GoEnv() != "dev", true)
+}
+
+func (uc *UserGinController) UpdateProfile(c *gin.Context) {
+	req := &dto.UpdateUserRequest{}
+	if err := c.Bind(req); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	id, err := userId(c)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+	req.Id = id
+
+	if err := Validate(req); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := uc.uu.Update(req)
+	if err != nil {
+		if errors.Is(myerror.ErrDuplicatedKey, err) {
+			c.JSON(http.StatusBadRequest, err.Error())
+		} else {
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
+
+		log.Println(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (uc *UserGinController) UpdateProfileImg(c *gin.Context) {
+	file, err := c.FormFile("profile_img")
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	id, err := userId(c)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	updateProfileImgReq := &dto.UpdateProfileImgRequest{
+		Id:   id,
+		File: file,
+	}
+	updateProfileImgResp, err := uc.upu.Update(updateProfileImgReq)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if config.GoEnv() == "dev" {
+		ulid, err := algo.GenerateULID()
+		if err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		fileName := fmt.Sprintf("%v_%v", ulid, file.Filename)
+		dst := fmt.Sprintf("./static/img/profile/%v", fileName)
+
+		// ローカルに画像を保存
+		if err := c.SaveUploadedFile(file, dst); err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		// 前の画像があれば削除
+		if updateProfileImgResp.ProfileImgURL != "" {
+			params := strings.Split(updateProfileImgResp.ProfileImgURL, "/")
+			preFileName := params[len(params)-1]
+			preFilePath := fmt.Sprintf("./static/img/profile/%v", preFileName)
+
+			if err := os.Remove(preFilePath); err != nil {
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, err.Error())
+				return
+			}
+		}
+
+		updateProfileImgResp.ProfileImgURL = fmt.Sprintf("%vimg/profile/%v", config.FilePath(), fileName)
+	} else {
+		// S3、またはCloud Storageでの保存処理
+
+	}
+
+	updateUserReq := &dto.UpdateUserRequest{
+		Id:            id,
+		ProfileImgURL: updateProfileImgResp.ProfileImgURL,
+	}
+
+	updateUserResp, err := uc.uu.Update(updateUserReq)
+	if err != nil {
+		if errors.Is(myerror.ErrDuplicatedKey, err) {
+			c.JSON(http.StatusBadRequest, err.Error())
+		} else {
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
+
+		log.Println(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, updateUserResp)
 }

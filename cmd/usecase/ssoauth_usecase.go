@@ -14,12 +14,12 @@ type SSOAuthUsecase interface {
 	Callback(req *dto.CallbackRequest) (*dto.CallbackResponse, error)
 }
 
-type OIDCAuthUsecase struct {
+type SSOAuthUsecaseImpl struct {
 	ur   repository.UserRepository
 	idPs map[string]*model.IdP
 }
 
-func NewOIDCAuthUsecase(ur repository.UserRepository) SSOAuthUsecase {
+func NewSSOAuthUsecase(ur repository.UserRepository) SSOAuthUsecase {
 	idPNames := []string{"google", "line"}
 
 	idPs := map[string]*model.IdP{}
@@ -29,13 +29,13 @@ func NewOIDCAuthUsecase(ur repository.UserRepository) SSOAuthUsecase {
 		idPs[name] = idP
 	}
 
-	return &OIDCAuthUsecase{
+	return &SSOAuthUsecaseImpl{
 		ur:   ur,
 		idPs: idPs,
 	}
 }
 
-func (lu *OIDCAuthUsecase) RedirectOAuthConsent(req *dto.RedirectOAuthConsentRequest) (*dto.RedirectOAuthConsentResponse, error) {
+func (lu *SSOAuthUsecaseImpl) RedirectOAuthConsent(req *dto.RedirectOAuthConsentRequest) (*dto.RedirectOAuthConsentResponse, error) {
 	idPName := req.IdPName
 	idP, ok := lu.idPs[idPName]
 	if !ok {
@@ -49,15 +49,15 @@ func (lu *OIDCAuthUsecase) RedirectOAuthConsent(req *dto.RedirectOAuthConsentReq
 
 	redirectURL := idP.RedirectURL(state)
 
-	output := &dto.RedirectOAuthConsentResponse{
+	resp := &dto.RedirectOAuthConsentResponse{
 		RedirectURL: redirectURL,
 		State:       state,
 	}
 
-	return output, nil
+	return resp, nil
 }
 
-func (lu *OIDCAuthUsecase) Callback(req *dto.CallbackRequest) (*dto.CallbackResponse, error) {
+func (lu *SSOAuthUsecaseImpl) Callback(req *dto.CallbackRequest) (*dto.CallbackResponse, error) {
 	if req.QueryState != req.CookieState {
 		return nil, errors.New("invalid state")
 	}
@@ -72,11 +72,11 @@ func (lu *OIDCAuthUsecase) Callback(req *dto.CallbackRequest) (*dto.CallbackResp
 		return nil, err
 	}
 
-	output := &dto.CallbackResponse{}
+	resp := &dto.CallbackResponse{}
 
-	if err := idToken.Claims(output); err != nil {
+	if err := idToken.Claims(resp); err != nil {
 		return nil, err
 	}
 
-	return output, nil
+	return resp, nil
 }

@@ -21,4 +21,6 @@ type CallbackResponse struct {
 	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Verified bool   `json:"email_verified"`
+	Iss      string `json:"iss"`
+	Sub      string `json:"sub"`
 }

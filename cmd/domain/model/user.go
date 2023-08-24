@@ -4,32 +4,36 @@ import (
 	"english/config"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/dgrijalva/jwt-go"
 )
 
 type User struct {
-	id              string
-	email           string
-	password        string
-	name            string
-	profileImageURL string
+	id            string
+	email         string
+	password      string
+	name          string
+	profileImgURL string
+	iss           string
+	sub           string
 }
 
 func NewUser(id, email, password, name, profileImageURL string) *User {
 	return &User{
-		id:              id,
-		email:           email,
-		password:        password,
-		name:            name,
-		profileImageURL: profileImageURL,
+		id:            id,
+		email:         email,
+		password:      password,
+		name:          name,
+		profileImgURL: profileImageURL,
 	}
 }
 
 func (u *User) CreateJWT(expireSec int) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	claims := jwt.MapClaims{
 		"user_id": u.id,
 		"exp":     time.Now().Add(time.Second * time.Duration(expireSec)).Unix(),
-	})
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// 環境変数のSECRETを使用し署名
 	jwtToken, err := token.SignedString([]byte(config.Secret()))
 	if err != nil {
@@ -56,7 +60,15 @@ func (u *User) Name() string {
 }
 
 func (u *User) ProfileImageURL() string {
-	return u.profileImageURL
+	return u.profileImgURL
+}
+
+func (u *User) Iss() string {
+	return u.iss
+}
+
+func (u *User) Sub() string {
+	return u.sub
 }
 
 func (u *User) SetId(id string) {
@@ -76,5 +88,13 @@ func (u *User) SetName(name string) {
 }
 
 func (u *User) SetProfileImageURL(profileImageURL string) {
-	u.profileImageURL = profileImageURL
+	u.profileImgURL = profileImageURL
+}
+
+func (u *User) SetIss(iss string) {
+	u.iss = iss
+}
+
+func (u *User) SetSub(sub string) {
+	u.sub = sub
 }
