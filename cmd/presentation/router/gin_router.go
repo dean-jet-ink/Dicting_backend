@@ -3,6 +3,7 @@ package router
 import (
 	"english/cmd/presentation/controller"
 	"english/cmd/presentation/middleware"
+	"english/config"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +13,9 @@ func NewGinRouter(uc controller.UserController) *gin.Engine {
 	router := gin.Default()
 	mid := middleware.NewGinMiddleware()
 
+	if config.GoEnv() == "dev" {
+		router.Static("/static", "./static")
+	}
 	router.Use(mid.JWTMiddleware)
 
 	router.GET("/", func(c *gin.Context) {
@@ -27,6 +31,7 @@ func NewGinRouter(uc controller.UserController) *gin.Engine {
 	router.GET("/auth/callback", uc.OAuthCallback)
 
 	router.POST("/user/update", uc.UpdateProfile)
+	router.POST("/user/update/profile-img", uc.UpdateProfileImg)
 
 	return router
 }

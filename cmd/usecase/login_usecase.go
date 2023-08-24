@@ -14,17 +14,17 @@ type LoginUsecase interface {
 	Login(req *dto.LoginRequest, isSSO bool) (string, error)
 }
 
-type StandardLoginUsecase struct {
+type LoginUsecaseImpl struct {
 	ur repository.UserRepository
 }
 
-func NewStandardLoginUsecase(ur repository.UserRepository) LoginUsecase {
-	return &StandardLoginUsecase{
+func NewLoginUsecase(ur repository.UserRepository) LoginUsecase {
+	return &LoginUsecaseImpl{
 		ur: ur,
 	}
 }
 
-func (uu *StandardLoginUsecase) Login(req *dto.LoginRequest, isSSO bool) (string, error) {
+func (uu *LoginUsecaseImpl) Login(req *dto.LoginRequest, isSSO bool) (string, error) {
 	user := &model.User{}
 	var err error
 

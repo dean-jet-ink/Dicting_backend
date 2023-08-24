@@ -1,14 +1,18 @@
 package controller
 
 import (
+	"english/algo"
 	"english/cmd/usecase"
 	"english/cmd/usecase/dto"
 	"english/config"
 	"english/myerror"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +24,7 @@ type UserController interface {
 	RedirectOAuthConsent(c *gin.Context)
 	OAuthCallback(c *gin.Context)
 	UpdateProfile(c *gin.Context)
+	UpdateProfileImg(c *gin.Context)
 }
 
 type UserGinController struct {
@@ -27,14 +32,16 @@ type UserGinController struct {
 	lu  usecase.LoginUsecase
 	ssu usecase.SSOAuthUsecase
 	uu  usecase.UpdateUserUsecase
+	upu usecase.UpdateProfileImgUsecase
 }
 
-func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOAuthUsecase, uu usecase.UpdateUserUsecase) UserController {
+func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOAuthUsecase, uu usecase.UpdateUserUsecase, upu usecase.UpdateProfileImgUsecase) UserController {
 	return &UserGinController{
 		su:  su,
 		lu:  lu,
 		ssu: ssu,
 		uu:  uu,
+		upu: upu,
 	}
 }
 
@@ -275,10 +282,98 @@ func (uc *UserGinController) UpdateProfile(c *gin.Context) {
 
 	resp, err := uc.uu.Update(req)
 	if err != nil {
+		if errors.Is(myerror.ErrDuplicatedKey, err) {
+			c.JSON(http.StatusBadRequest, err.Error())
+		} else {
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
+
+		log.Println(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (uc *UserGinController) UpdateProfileImg(c *gin.Context) {
+	file, err := c.FormFile("profile_img")
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	id, err := userId(c)
+	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	updateProfileImgReq := &dto.UpdateProfileImgRequest{
+		Id:   id,
+		File: file,
+	}
+	updateProfileImgResp, err := uc.upu.Update(updateProfileImgReq)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	if config.GoEnv() == "dev" {
+		ulid, err := algo.GenerateULID()
+		if err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		fileName := fmt.Sprintf("%v_%v", ulid, file.Filename)
+		dst := fmt.Sprintf("./static/img/profile/%v", fileName)
+
+		// ローカルに画像を保存
+		if err := c.SaveUploadedFile(file, dst); err != nil {
+			log.Println(err)
+			c.JSON(http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		// 前の画像があれば削除
+		if updateProfileImgResp.ProfileImgURL != "" {
+			params := strings.Split(updateProfileImgResp.ProfileImgURL, "/")
+			preFileName := params[len(params)-1]
+			preFilePath := fmt.Sprintf("./static/img/profile/%v", preFileName)
+
+			if err := os.Remove(preFilePath); err != nil {
+				log.Println(err)
+				c.JSON(http.StatusInternalServerError, err.Error())
+				return
+			}
+		}
+
+		updateProfileImgResp.ProfileImgURL = fmt.Sprintf("%vimg/profile/%v", config.FilePath(), fileName)
+	} else {
+		// S3、またはCloud Storageでの保存処理
+
+	}
+
+	updateUserReq := &dto.UpdateUserRequest{
+		Id:            id,
+		ProfileImgURL: updateProfileImgResp.ProfileImgURL,
+	}
+
+	updateUserResp, err := uc.uu.Update(updateUserReq)
+	if err != nil {
+		if errors.Is(myerror.ErrDuplicatedKey, err) {
+			c.JSON(http.StatusBadRequest, err.Error())
+		} else {
+			c.JSON(http.StatusInternalServerError, err.Error())
+		}
+
+		log.Println(err)
+		return
+	}
+
+	c.JSON(http.StatusOK, updateUserResp)
 }

@@ -8,22 +8,22 @@ import (
 )
 
 type User struct {
-	id              string
-	email           string
-	password        string
-	name            string
-	profileImageURL string
-	iss             string
-	sub             string
+	id            string
+	email         string
+	password      string
+	name          string
+	profileImgURL string
+	iss           string
+	sub           string
 }
 
 func NewUser(id, email, password, name, profileImageURL string) *User {
 	return &User{
-		id:              id,
-		email:           email,
-		password:        password,
-		name:            name,
-		profileImageURL: profileImageURL,
+		id:            id,
+		email:         email,
+		password:      password,
+		name:          name,
+		profileImgURL: profileImageURL,
 	}
 }
 
@@ -60,7 +60,7 @@ func (u *User) Name() string {
 }
 
 func (u *User) ProfileImageURL() string {
-	return u.profileImageURL
+	return u.profileImgURL
 }
 
 func (u *User) Iss() string {
@@ -88,7 +88,7 @@ func (u *User) SetName(name string) {
 }
 
 func (u *User) SetProfileImageURL(profileImageURL string) {
-	u.profileImageURL = profileImageURL
+	u.profileImgURL = profileImageURL
 }
 
 func (u *User) SetIss(iss string) {

@@ -22,6 +22,17 @@ func NewUserMySQLRepository(db *gorm.DB) repository.UserRepository {
 	}
 }
 
+func (ur *UserMySQLRepository) FindById(id string) (*model.User, error) {
+	entity := &entity.UserEntity{}
+	if err := ur.db.Where("id=?", id).First(entity).Error; err != nil {
+		return nil, err
+	}
+
+	user := model.NewUser(entity.Id, entity.Email, entity.Password, entity.Name, entity.ProfileImageURL)
+
+	return user, nil
+}
+
 func (ur *UserMySQLRepository) FindByEmail(email string) (*model.User, error) {
 	entity := &entity.UserEntity{}
 	if err := ur.db.Where("email=?", email).First(entity).Error; err != nil {
@@ -84,12 +95,6 @@ func (ur *UserMySQLRepository) Update(user *model.User) error {
 		}
 		return err
 	}
-
-	if err := ur.db.Where("id=?", entity.Id).First(entity).Error; err != nil {
-		return err
-	}
-
-	ur.entiryToModel(entity, user)
 
 	return nil
 }
