@@ -37,6 +37,9 @@ func (su *StandardSignupUsecase) Signup(req *dto.SignupRequest, isSSO bool) (str
 		}
 		pass := string(hash)
 		user.SetPassword(pass)
+	} else {
+		user.SetIss(req.Iss)
+		user.SetSub(req.Sub)
 	}
 
 	if err := su.ur.Create(user); err != nil {

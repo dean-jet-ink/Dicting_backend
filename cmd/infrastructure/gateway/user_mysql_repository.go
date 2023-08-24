@@ -23,8 +23,8 @@ func NewUserMySQLRepository(db *gorm.DB) repository.UserRepository {
 }
 
 func (ur *UserMySQLRepository) FindByEmail(email string) (*model.User, error) {
-	ue := &entity.UserEntity{}
-	if err := ur.db.Where("email=?", email).First(ue).Error; err != nil {
+	entity := &entity.UserEntity{}
+	if err := ur.db.Where("email=?", email).First(entity).Error; err != nil {
 		if errors.Is(gorm.ErrRecordNotFound, err) {
 			return nil, myerror.ErrRecordNotFound
 		}
@@ -32,9 +32,24 @@ func (ur *UserMySQLRepository) FindByEmail(email string) (*model.User, error) {
 		return nil, err
 	}
 
-	u := model.NewUser(ue.Id, ue.Email, ue.Password, ue.Name, ue.ProfileImageURL)
+	u := model.NewUser(entity.Id, entity.Email, entity.Password, entity.Name, entity.ProfileImageURL)
 
 	return u, nil
+}
+
+func (ur *UserMySQLRepository) FindByIssAndSub(iss, sub string) (*model.User, error) {
+	entity := &entity.UserEntity{}
+	if err := ur.db.Where("iss=? AND sub=?", iss, sub).First(entity).Error; err != nil {
+		if errors.Is(gorm.ErrRecordNotFound, err) {
+			return nil, myerror.ErrRecordNotFound
+		}
+
+		return nil, err
+	}
+
+	user := model.NewUser(entity.Id, entity.Email, entity.Password, entity.Name, entity.ProfileImageURL)
+
+	return user, nil
 }
 
 func (ur *UserMySQLRepository) Create(user *model.User) error {
@@ -47,6 +62,30 @@ func (ur *UserMySQLRepository) Create(user *model.User) error {
 		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
 			return myerror.ErrDuplicatedKey
 		}
+		return err
+	}
+
+	ur.entiryToModel(entity, user)
+
+	return nil
+}
+
+func (ur *UserMySQLRepository) Update(user *model.User) error {
+	entity := &entity.UserEntity{
+		Id:              user.Id(),
+		Email:           user.Email(),
+		Name:            user.Name(),
+		ProfileImageURL: user.ProfileImageURL(),
+	}
+
+	if err := ur.db.Updates(entity).Error; err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
+			return myerror.ErrDuplicatedKey
+		}
+		return err
+	}
+
+	if err := ur.db.Where("id=?", entity.Id).First(entity).Error; err != nil {
 		return err
 	}
 

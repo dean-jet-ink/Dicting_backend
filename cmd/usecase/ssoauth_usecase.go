@@ -49,12 +49,12 @@ func (lu *OIDCAuthUsecase) RedirectOAuthConsent(req *dto.RedirectOAuthConsentReq
 
 	redirectURL := idP.RedirectURL(state)
 
-	output := &dto.RedirectOAuthConsentResponse{
+	resp := &dto.RedirectOAuthConsentResponse{
 		RedirectURL: redirectURL,
 		State:       state,
 	}
 
-	return output, nil
+	return resp, nil
 }
 
 func (lu *OIDCAuthUsecase) Callback(req *dto.CallbackRequest) (*dto.CallbackResponse, error) {
@@ -72,11 +72,11 @@ func (lu *OIDCAuthUsecase) Callback(req *dto.CallbackRequest) (*dto.CallbackResp
 		return nil, err
 	}
 
-	output := &dto.CallbackResponse{}
+	resp := &dto.CallbackResponse{}
 
-	if err := idToken.Claims(output); err != nil {
+	if err := idToken.Claims(resp); err != nil {
 		return nil, err
 	}
 
-	return output, nil
+	return resp, nil
 }

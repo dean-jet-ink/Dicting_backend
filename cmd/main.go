@@ -3,8 +3,8 @@ package main
 import (
 	"english/cmd/infrastructure/dbconn"
 	"english/cmd/infrastructure/gateway"
-	"english/cmd/presentation"
 	"english/cmd/presentation/controller"
+	"english/cmd/presentation/router"
 	"english/cmd/usecase"
 	"english/config"
 	"fmt"
@@ -20,8 +20,9 @@ func main() {
 	su := usecase.NewStandardSignupUsecase(ur)
 	lu := usecase.NewStandardLoginUsecase(ur)
 	ssu := usecase.NewOIDCAuthUsecase(ur)
-	uc := controller.NewUserGinController(su, lu, ssu)
-	router := presentation.NewGinRouter(uc)
+	uu := usecase.NewUpdateUserProfileUsecase(ur)
+	uc := controller.NewUserGinController(su, lu, ssu, uu)
+	router := router.NewGinRouter(uc)
 
 	router.Run(fmt.Sprintf(":%v", config.Port()))
 }
