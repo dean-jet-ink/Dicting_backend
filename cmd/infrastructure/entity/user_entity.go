@@ -14,6 +14,6 @@ type UserEntity struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-func (ue *UserEntity) TableName() string {
+func (u *UserEntity) TableName() string {
 	return "users"
 }

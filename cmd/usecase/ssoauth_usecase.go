@@ -6,7 +6,9 @@ import (
 	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
 	"english/cmd/usecase/dto"
+	"english/config"
 	"errors"
+	"strings"
 )
 
 type SSOAuthUsecase interface {
@@ -20,13 +22,13 @@ type SSOAuthUsecaseImpl struct {
 }
 
 func NewSSOAuthUsecase(ur repository.UserRepository) SSOAuthUsecase {
-	idPNames := []string{"google", "line"}
+	idPNames := []config.IdPName{config.GOOGLE, config.LINE}
 
 	idPs := map[string]*model.IdP{}
 
 	for _, name := range idPNames {
 		idP := model.NewIdP(name)
-		idPs[name] = idP
+		idPs[string(name)] = idP
 	}
 
 	return &SSOAuthUsecaseImpl{
@@ -37,6 +39,7 @@ func NewSSOAuthUsecase(ur repository.UserRepository) SSOAuthUsecase {
 
 func (lu *SSOAuthUsecaseImpl) RedirectOAuthConsent(req *dto.RedirectOAuthConsentRequest) (*dto.RedirectOAuthConsentResponse, error) {
 	idPName := req.IdPName
+	idPName = strings.ToUpper(idPName)
 	idP, ok := lu.idPs[idPName]
 	if !ok {
 		return nil, errors.New("invalid idP name")

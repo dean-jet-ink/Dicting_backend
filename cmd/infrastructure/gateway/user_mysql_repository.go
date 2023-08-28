@@ -99,9 +99,9 @@ func (ur *UserMySQLRepository) Update(user *model.User) error {
 	return nil
 }
 
-func (ur *UserMySQLRepository) modelToEntity(u *model.User) (*entity.UserEntity, error) {
+func (ur *UserMySQLRepository) modelToEntity(m *model.User) (*entity.UserEntity, error) {
 	e := &entity.UserEntity{}
-	err := copier.Copy(e, u)
+	err := copier.Copy(e, m)
 	if err != nil {
 		return nil, err
 	}
@@ -109,10 +109,10 @@ func (ur *UserMySQLRepository) modelToEntity(u *model.User) (*entity.UserEntity,
 	return e, nil
 }
 
-func (ur *UserMySQLRepository) entiryToModel(e *entity.UserEntity, u *model.User) {
-	u.SetId(e.Id)
-	u.SetEmail(e.Email)
-	u.SetPassword(e.Password)
-	u.SetName(e.Name)
-	u.SetProfileImageURL(e.ProfileImageURL)
+func (ur *UserMySQLRepository) entiryToModel(e *entity.UserEntity, m *model.User) {
+	m.SetId(e.Id)
+	m.SetEmail(e.Email)
+	m.SetPassword(e.Password)
+	m.SetName(e.Name)
+	m.SetProfileImageURL(e.ProfileImageURL)
 }

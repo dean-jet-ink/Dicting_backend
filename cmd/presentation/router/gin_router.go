@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewGinRouter(uc controller.UserController) *gin.Engine {
+func NewGinRouter(uc controller.UserController, ec controller.EnglishItemController) *gin.Engine {
 	router := gin.Default()
 	mid := middleware.NewGinMiddleware()
 
@@ -23,7 +23,6 @@ func NewGinRouter(uc controller.UserController) *gin.Engine {
 		templ.Execute(c.Writer, nil)
 	})
 
-	// 認証関係
 	router.POST("/signup", uc.Signup)
 	router.POST("/login", uc.Login)
 	router.POST("/logout", uc.Logout)
@@ -32,6 +31,8 @@ func NewGinRouter(uc controller.UserController) *gin.Engine {
 
 	router.POST("/user/update", uc.UpdateProfile)
 	router.POST("/user/update/profile-img", uc.UpdateProfileImg)
+
+	router.GET("/english/proposal", ec.Proposal)
 
 	return router
 }
