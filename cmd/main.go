@@ -1,6 +1,7 @@
 package main
 
 import (
+	"english/cmd/infrastructure/client"
 	"english/cmd/infrastructure/dbconn"
 	"english/cmd/infrastructure/gateway"
 	"english/cmd/presentation/controller"
@@ -16,6 +17,7 @@ func init() {
 
 func main() {
 	db := dbconn.NewDB()
+
 	ur := gateway.NewUserMySQLRepository(db)
 	su := usecase.NewSignupUsecase(ur)
 	lu := usecase.NewLoginUsecase(ur)
@@ -23,7 +25,12 @@ func main() {
 	uu := usecase.NewUpdateUserProfileUsecase(ur)
 	upu := usecase.NewUpdateProfileImgUsecase(ur)
 	uc := controller.NewUserGinController(su, lu, ssu, uu, upu)
-	router := router.NewGinRouter(uc)
+
+	chatGPTAPI := client.NewOpenAIAPI()
+	pu := usecase.NewProposalEnglishItemUsecase(chatGPTAPI)
+	ec := controller.NewEnglishItemController(pu)
+
+	router := router.NewGinRouter(uc, ec)
 
 	router.Run(fmt.Sprintf(":%v", config.Port()))
 }

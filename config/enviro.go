@@ -5,9 +5,22 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/joho/godotenv"
+)
+
+type IdPName string
+
+const (
+	GOOGLE IdPName = "GOOGLE"
+	LINE   IdPName = "LINE"
+)
+
+type APIName string
+
+const (
+	OPENAI      APIName = "OPENAI"
+	DREAMSTUDIO APIName = "DREAMSTUDIO"
 )
 
 func init() {
@@ -71,17 +84,22 @@ func OAuthRedirectURL() string {
 	return os.Getenv("OAUTH_REDIRECT_URL")
 }
 
-func ISSURL(idpName string) string {
-	idpName = strings.ToUpper(idpName)
+func ISSURL(idpName IdPName) string {
 	return os.Getenv(fmt.Sprintf("%s_ISS_URL", idpName))
 }
 
-func ClientId(idpName string) string {
-	idpName = strings.ToUpper(idpName)
+func ClientId(idpName IdPName) string {
 	return os.Getenv(fmt.Sprintf("%s_CLIENT_ID", idpName))
 }
 
-func ClientSecret(idpName string) string {
-	idpName = strings.ToUpper(idpName)
+func ClientSecret(idpName IdPName) string {
 	return os.Getenv(fmt.Sprintf("%s_CLIENT_SECRET", idpName))
+}
+
+func APIKey(apiName APIName) string {
+	return os.Getenv(fmt.Sprintf("%s_API_KEY", apiName))
+}
+
+func SearchEngineId() string {
+	return os.Getenv("SEARCH_ENGINE_ID")
 }

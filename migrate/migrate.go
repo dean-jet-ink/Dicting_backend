@@ -15,7 +15,7 @@ func main() {
 	db := dbconn.NewDB()
 	defer dbconn.Close(db)
 
-	if err := db.AutoMigrate(&entity.UserEntity{}); err != nil {
+	if err := db.AutoMigrate(&entity.UserEntity{}, &entity.EnglishItemEntity{}); err != nil {
 		log.Fatalf("Failed to migrate: %s", err)
 	}
 

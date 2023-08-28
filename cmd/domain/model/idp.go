@@ -14,12 +14,12 @@ import (
 var scopes = []string{oidc.ScopeOpenID, "email", "profile"}
 
 type IdP struct {
-	idPName      string
+	idPName      config.IdPName
 	oauth2Config oauth2.Config
 	verifier     *oidc.IDTokenVerifier
 }
 
-func NewIdP(idPName string) *IdP {
+func NewIdP(idPName config.IdPName) *IdP {
 	provider, _ := oidc.NewProvider(context.Background(), config.ISSURL(idPName))
 	clientID := config.ClientId(idPName)
 
@@ -38,6 +38,7 @@ func NewIdP(idPName string) *IdP {
 	verifier := provider.Verifier(oidcConfig)
 
 	return &IdP{
+		idPName:      idPName,
 		oauth2Config: oauth2config,
 		verifier:     verifier,
 	}

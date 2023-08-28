@@ -4,6 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
+    <style>
+      #___gcse_0 {
+        width: 370px;
+      }
+
+      .eng-img {
+        width: 184px;
+        height: 184px;
+        object-fit: cover;
+      }
+
+      .gsc-positioningWrapper {
+        visibility: hidden;
+      }
+    </style>
   </head>
   <body>
     <div>
@@ -31,5 +46,77 @@
         </li>
       </ul>
     </div>
+    <div>
+      <h3>画像検索</h3>
+      <div class="gcse-search"></div>
+      <div id="image-store"></div>
+    </div>
+    <script
+      async
+      src="https://cse.google.com/cse.js?cx=901d62185ddda4cd1"
+    ></script>
+    <script>
+      const config = {
+        keyword: "",
+      };
+
+      window.onload = () => {
+        document
+          .querySelector(".gsc-search-button")
+          .addEventListener("click", setEvent);
+
+        const input = document.getElementById("gsc-i-id1");
+        input.oninput = (event) => {
+          config.keyword = event.target.value;
+        };
+        input.addEventListener("keydown", (event) => {
+          if (event.key == "Enter") {
+            setTimeout(setEvent, 300);
+          }
+        });
+
+        const closeButton = document.querySelector(".gsc-results-close-btn");
+        closeButton.addEventListener("click", () => {
+          input.value = config.keyword;
+        });
+
+        function setEvent() {
+          const tabs = document.querySelectorAll(".gsc-tabHeader");
+          tabs[1].click();
+          setTimeout(storeImg, 1000);
+          setPagenationEvent();
+        }
+
+        function storeImg() {
+          const imgBoxs = document.querySelectorAll(".gs-image-box");
+
+          console.log(imgBoxs);
+
+          imgBoxs.forEach((imgBox) => {
+            imgBox.onclick = () => {
+              const src = imgBox.querySelector("img").getAttribute("src");
+
+              const img = document.createElement("img");
+              img.setAttribute("src", src);
+              img.classList.add("eng-img");
+
+              const store = document.getElementById("image-store");
+              store.appendChild(img);
+
+              closeButton.click();
+            };
+          });
+        }
+
+        function setPagenationEvent() {
+          const pagenations = document.querySelectorAll(".gsc-cursor-page");
+          pagenations.forEach((pagenation) => {
+            pagenation.addEventListener("click", () => {
+              setTimeout(storeImg, 1000);
+            });
+          });
+        }
+      };
+    </script>
   </body>
 </html>
