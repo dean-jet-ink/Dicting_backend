@@ -13,21 +13,53 @@ type EnglishItemMySQLRepository struct {
 }
 
 func NewEnglishItemMySQLReporitory(db *gorm.DB) repository.EnglishItemRepository {
-	return &EnglishItemMySQLRepository{}
+	return &EnglishItemMySQLRepository{
+		db: db,
+	}
 }
 
 func (er *EnglishItemMySQLRepository) Create(englishItem *model.EnglishItem) error {
 	enti := er.modelToEntity(englishItem)
+
 	if err := er.db.Create(enti).Error; err != nil {
 		return err
 	}
 
-	er.entityToModel(enti, englishItem)
 	return nil
 }
 
 func (er *EnglishItemMySQLRepository) modelToEntity(m *model.EnglishItem) *entity.EnglishItemEntity {
-	return entity.NewEnglishItemEntity(m.Id(), m.Content(), m.JoinJaTranslations(), m.EnExplanation(), m.UserId())
+
+	exampleEntitys := []*entity.ExampleEntity{}
+	for _, example := range m.Examples() {
+		enti := &entity.ExampleEntity{
+			Id:            example.Id,
+			Example:       example.Example,
+			Translation:   example.Translation,
+			EnglishItemId: m.Id(),
+		}
+		exampleEntitys = append(exampleEntitys, enti)
+	}
+
+	imgEntitys := []*entity.ImgEntity{}
+	for _, img := range m.Imgs() {
+		enti := &entity.ImgEntity{
+			Id:            img.Id(),
+			URL:           img.URL(),
+			EnglishItemId: m.Id(),
+		}
+		imgEntitys = append(imgEntitys, enti)
+	}
+
+	return &entity.EnglishItemEntity{
+		Id:             m.Id(),
+		Content:        m.Content(),
+		JaTranslations: m.JoinJaTranslations(),
+		EnExplanation:  m.EnExplanation(),
+		UserId:         m.UserId(),
+		Examples:       exampleEntitys,
+		Imgs:           imgEntitys,
+	}
 }
 
 func (er *EnglishItemMySQLRepository) entityToModel(e *entity.EnglishItemEntity, m *model.EnglishItem) {

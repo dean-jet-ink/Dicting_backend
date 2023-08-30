@@ -18,19 +18,22 @@ func init() {
 func main() {
 	db := dbconn.NewDB()
 
-	ur := gateway.NewUserMySQLRepository(db)
-	su := usecase.NewSignupUsecase(ur)
-	lu := usecase.NewLoginUsecase(ur)
-	ssu := usecase.NewSSOAuthUsecase(ur)
-	uu := usecase.NewUpdateUserProfileUsecase(ur)
-	upu := usecase.NewUpdateProfileImgUsecase(ur)
-	uc := controller.NewUserGinController(su, lu, ssu, uu, upu)
+	userRepo := gateway.NewUserMySQLRepository(db)
+	signupUse := usecase.NewSignupUsecase(userRepo)
+	loginUse := usecase.NewLoginUsecase(userRepo)
+	ssoAuthUse := usecase.NewSSOAuthUsecase(userRepo)
+	updateUserUse := usecase.NewUpdateUserProfileUsecase(userRepo)
+	updateProfileUse := usecase.NewUpdateProfileImgUsecase(userRepo)
+	userGinCon := controller.NewUserGinController(signupUse, loginUse, ssoAuthUse, updateUserUse, updateProfileUse)
 
 	chatGPTAPI := client.NewOpenAIAPI()
-	pu := usecase.NewProposalEnglishItemUsecase(chatGPTAPI)
-	ec := controller.NewEnglishItemController(pu)
+	proposalUse := usecase.NewProposalEnglishItemUsecase(chatGPTAPI)
+	englishItemRepo := gateway.NewEnglishItemMySQLReporitory(db)
+	fileStorageRepo := gateway.NewFileStorageGCSRepository()
+	createEnglishItemUse := usecase.NewCreateEnglishItemUsecase(englishItemRepo, fileStorageRepo)
+	ec := controller.NewEnglishItemController(proposalUse, createEnglishItemUse)
 
-	router := router.NewGinRouter(uc, ec)
+	router := router.NewGinRouter(userGinCon, ec)
 
 	router.Run(fmt.Sprintf(":%v", config.Port()))
 }
