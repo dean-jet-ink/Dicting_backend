@@ -8,15 +8,18 @@ type EnglishItem struct {
 	jaTranslations []string
 	enExplanation  string
 	examples       []*Example
+	imgs           []*Img
 	userId         string
 }
 
-func NewEnglishItem(id, content string, jaTranslations []string, enExplanation, userId string) *EnglishItem {
+func NewEnglishItem(id, content string, jaTranslations []string, enExplanation string, examples []*Example, imgs []*Img, userId string) *EnglishItem {
 	return &EnglishItem{
 		id:             id,
 		content:        content,
 		jaTranslations: jaTranslations,
 		enExplanation:  enExplanation,
+		examples:       examples,
+		imgs:           imgs,
 		userId:         userId,
 	}
 }
@@ -45,6 +48,10 @@ func (e *EnglishItem) Examples() []*Example {
 	return e.examples
 }
 
+func (e *EnglishItem) Imgs() []*Img {
+	return e.imgs
+}
+
 func (e *EnglishItem) UserId() string {
 	return e.userId
 }
@@ -69,10 +76,14 @@ func (e *EnglishItem) SetEnExplanation(enExplanation string) {
 	e.enExplanation = enExplanation
 }
 
-func (e *EnglishItem) SetUserId(userId string) {
-	e.userId = userId
-}
-
 func (e *EnglishItem) SetExamples(examples []*Example) {
 	e.examples = examples
+}
+
+func (e *EnglishItem) SetImgURLs(imgs []*Img) {
+	e.imgs = imgs
+}
+
+func (e *EnglishItem) SetUserId(userId string) {
+	e.userId = userId
 }

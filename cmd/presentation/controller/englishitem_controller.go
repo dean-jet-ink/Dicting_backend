@@ -10,16 +10,19 @@ import (
 )
 
 type EnglishItemController interface {
+	Create(c *gin.Context)
 	Proposal(c *gin.Context)
 }
 
 type EnglishItemGinController struct {
-	pu usecase.ProposalEnglishItemUsecase
+	proposalUse usecase.ProposalEnglishItemUsecase
+	createUse   usecase.CreateEnglishItemUsecase
 }
 
-func NewEnglishItemController(pu usecase.ProposalEnglishItemUsecase) EnglishItemController {
+func NewEnglishItemController(proposalUse usecase.ProposalEnglishItemUsecase, createUse usecase.CreateEnglishItemUsecase) EnglishItemController {
 	return &EnglishItemGinController{
-		pu: pu,
+		proposalUse: proposalUse,
+		createUse:   createUse,
 	}
 }
 
@@ -37,7 +40,7 @@ func (ec *EnglishItemGinController) Proposal(c *gin.Context) {
 		return
 	}
 
-	resp, err := ec.pu.Proposal(req)
+	resp, err := ec.proposalUse.Proposal(req)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, err.Error())
@@ -45,4 +48,35 @@ func (ec *EnglishItemGinController) Proposal(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+func (ec *EnglishItemGinController) Create(c *gin.Context) {
+	req := &dto.CreateEnglishItemRequest{}
+	if err := c.BindJSON(req); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := Validate(req); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	userId, err := userId(c)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+	req.UserId = userId
+	resp, err := ec.createUse.Create(req)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusCreated, resp)
 }

@@ -352,7 +352,7 @@ func (uc *UserGinController) UpdateProfileImg(c *gin.Context) {
 			}
 		}
 
-		updateProfileImgResp.ProfileImgURL = fmt.Sprintf("%vimg/profile/%v", config.FilePath(), fileName)
+		updateProfileImgResp.ProfileImgURL = fmt.Sprintf("%v/img/profile/%v", config.FilePath(), fileName)
 	} else {
 		// S3、またはCloud Storageでの保存処理
 

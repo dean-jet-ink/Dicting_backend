@@ -22,7 +22,7 @@ func NewProposalEnglishItemUsecase(chatAIAPI api.ChatAIAPI) ProposalEnglishItemU
 }
 
 func (pu *ProposalEnglishItemUsecaseImpl) Proposal(req *dto.ProposalEnglishItemRequest) (*dto.ProposalEnglishItemResponse, error) {
-	englishItem := model.NewEnglishItem("", req.Content, nil, "", "")
+	englishItem := model.NewEnglishItem("", req.Content, nil, "", nil, nil, "")
 
 	// goroutineで記載
 	if err := pu.chatAIAPI.GetTranslation(englishItem); err != nil {
@@ -33,11 +33,20 @@ func (pu *ProposalEnglishItemUsecaseImpl) Proposal(req *dto.ProposalEnglishItemR
 		return nil, err
 	}
 
+	examples := []*dto.Example{}
+	for _, example := range englishItem.Examples() {
+		exampleDto := &dto.Example{
+			Example:     example.Example,
+			Translation: example.Translation,
+		}
+		examples = append(examples, exampleDto)
+	}
+
 	resp := &dto.ProposalEnglishItemResponse{
 		Content:        englishItem.Content(),
 		JaTranslations: englishItem.JaTranslations(),
 		EnExplanation:  englishItem.EnExplanation(),
-		Examples:       englishItem.Examples(),
+		Examples:       examples,
 	}
 
 	return resp, nil

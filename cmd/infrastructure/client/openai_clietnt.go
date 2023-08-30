@@ -30,7 +30,7 @@ func (c *OpenAIClient) GetTranslation(englishItem *model.EnglishItem) error {
 		return err
 	}
 
-	answer := &model.TranslationPrompt{}
+	answer := &model.Translation{}
 
 	if err := json.Unmarshal([]byte(resp), answer); err != nil {
 		return nil
@@ -50,7 +50,7 @@ func (c *OpenAIClient) GetExample(englishItem *model.EnglishItem) error {
 		return err
 	}
 
-	answer := &model.ExamplePrompt{}
+	answer := &model.Examples{}
 
 	if err := json.Unmarshal([]byte(resp), answer); err != nil {
 		return err
@@ -81,7 +81,7 @@ func (c *OpenAIClient) createChatCompletion(ctx context.Context, prompt string) 
 }
 
 func (c *OpenAIClient) translationPrompt(content string) string {
-	answerExample := model.TranslationPrompt{
+	answerExample := model.Translation{
 		JaTranslations: []string{
 			"japanese",
 			"japanese",
@@ -96,7 +96,7 @@ func (c *OpenAIClient) translationPrompt(content string) string {
 }
 
 func (c *OpenAIClient) examplePrompt(content string) string {
-	answerExample := model.ExamplePrompt{
+	answerExample := model.Examples{
 		Examples: []*model.Example{
 			{
 				Example:     "english",
