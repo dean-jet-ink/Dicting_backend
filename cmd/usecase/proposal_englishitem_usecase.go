@@ -4,6 +4,7 @@ import (
 	"english/cmd/domain/api"
 	"english/cmd/domain/model"
 	"english/cmd/usecase/dto"
+	"sync"
 )
 
 type ProposalEnglishItemUsecase interface {
@@ -24,13 +25,33 @@ func NewProposalEnglishItemUsecase(chatAIAPI api.ChatAIAPI) ProposalEnglishItemU
 func (pu *ProposalEnglishItemUsecaseImpl) Proposal(req *dto.ProposalEnglishItemRequest) (*dto.ProposalEnglishItemResponse, error) {
 	englishItem := model.NewEnglishItem("", req.Content, nil, "", nil, nil, "")
 
-	// goroutineで記載
-	if err := pu.chatAIAPI.GetTranslation(englishItem); err != nil {
-		return nil, err
-	}
+	wg := sync.WaitGroup{}
+	errChan := make(chan error)
 
-	if err := pu.chatAIAPI.GetExample(englishItem); err != nil {
-		return nil, err
+	wg.Add(2)
+	go func() {
+		if err := pu.chatAIAPI.GetTranslation(englishItem); err != nil {
+			errChan <- err
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		if err := pu.chatAIAPI.GetExample(englishItem); err != nil {
+			errChan <- err
+		}
+		wg.Done()
+	}()
+
+	go func() {
+		wg.Wait()
+		close(errChan)
+	}()
+
+	for err := range errChan {
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	examples := []*dto.Example{}
@@ -44,7 +65,7 @@ func (pu *ProposalEnglishItemUsecaseImpl) Proposal(req *dto.ProposalEnglishItemR
 
 	resp := &dto.ProposalEnglishItemResponse{
 		Content:        englishItem.Content(),
-		JaTranslations: englishItem.JaTranslations(),
+		JaTranslations: englishItem.Translations(),
 		EnExplanation:  englishItem.EnExplanation(),
 		Examples:       examples,
 	}

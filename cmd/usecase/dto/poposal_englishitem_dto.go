@@ -6,7 +6,7 @@ type ProposalEnglishItemRequest struct {
 
 type ProposalEnglishItemResponse struct {
 	Content        string     `json:"content"`
-	JaTranslations []string   `json:"ja_translations,omitempty"`
+	JaTranslations []string   `json:"translations,omitempty"`
 	EnExplanation  string     `json:"en_explanation,omitempty"`
 	Examples       []*Example `json:"examples,omitempty"`
 }

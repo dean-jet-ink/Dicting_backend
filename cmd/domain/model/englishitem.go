@@ -3,29 +3,29 @@ package model
 import "strings"
 
 type EnglishItem struct {
-	id             string
-	content        string
-	jaTranslations []string
-	enExplanation  string
-	examples       []*Example
-	imgs           []*Img
-	userId         string
+	id            string
+	content       string
+	translations  []string
+	enExplanation string
+	examples      []*Example
+	imgs          []*Img
+	userId        string
 }
 
-func NewEnglishItem(id, content string, jaTranslations []string, enExplanation string, examples []*Example, imgs []*Img, userId string) *EnglishItem {
+func NewEnglishItem(id, content string, translations []string, enExplanation string, examples []*Example, imgs []*Img, userId string) *EnglishItem {
 	return &EnglishItem{
-		id:             id,
-		content:        content,
-		jaTranslations: jaTranslations,
-		enExplanation:  enExplanation,
-		examples:       examples,
-		imgs:           imgs,
-		userId:         userId,
+		id:            id,
+		content:       content,
+		translations:  translations,
+		enExplanation: enExplanation,
+		examples:      examples,
+		imgs:          imgs,
+		userId:        userId,
 	}
 }
 
-func (e *EnglishItem) JoinJaTranslations() string {
-	return strings.Join(e.jaTranslations, ",")
+func (e *EnglishItem) JoinTranslations() string {
+	return strings.Join(e.translations, ",")
 }
 
 func (e *EnglishItem) Id() string {
@@ -36,8 +36,8 @@ func (e *EnglishItem) Content() string {
 	return e.content
 }
 
-func (e *EnglishItem) JaTranslations() []string {
-	return e.jaTranslations
+func (e *EnglishItem) Translations() []string {
+	return e.translations
 }
 
 func (e *EnglishItem) EnExplanation() string {
@@ -64,12 +64,12 @@ func (e *EnglishItem) SetContent(content string) {
 	e.content = content
 }
 
-func (e *EnglishItem) SetJaTranslations(jaTranslations []string) {
-	e.jaTranslations = jaTranslations
+func (e *EnglishItem) SetTranslations(translations []string) {
+	e.translations = translations
 }
 
-func (e *EnglishItem) SetJaTranslationsFromStr(jaTranslations string) {
-	e.jaTranslations = strings.Split(jaTranslations, ",")
+func (e *EnglishItem) SetTranslationsFromStr(translations string) {
+	e.translations = strings.Split(translations, ",")
 }
 
 func (e *EnglishItem) SetEnExplanation(enExplanation string) {
@@ -80,7 +80,7 @@ func (e *EnglishItem) SetExamples(examples []*Example) {
 	e.examples = examples
 }
 
-func (e *EnglishItem) SetImgURLs(imgs []*Img) {
+func (e *EnglishItem) SetImgs(imgs []*Img) {
 	e.imgs = imgs
 }
 

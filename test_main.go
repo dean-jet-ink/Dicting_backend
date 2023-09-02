@@ -14,5 +14,5 @@ func main() {
 
 	m, _ := json.Marshal(example)
 
-	fmt.Println(string(m))
+	fmt.Printf("abcd:%s", m)
 }

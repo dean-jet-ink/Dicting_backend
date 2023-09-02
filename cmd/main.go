@@ -31,7 +31,8 @@ func main() {
 	englishItemRepo := gateway.NewEnglishItemMySQLReporitory(db)
 	fileStorageRepo := gateway.NewFileStorageGCSRepository()
 	createEnglishItemUse := usecase.NewCreateEnglishItemUsecase(englishItemRepo, fileStorageRepo)
-	ec := controller.NewEnglishItemController(proposalUse, createEnglishItemUse)
+	findAllEnglishItemUse := usecase.NewGetEnglishItemUsecase(englishItemRepo)
+	ec := controller.NewEnglishItemController(proposalUse, createEnglishItemUse, findAllEnglishItemUse)
 
 	router := router.NewGinRouter(userGinCon, ec)
 

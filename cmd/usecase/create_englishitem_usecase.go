@@ -84,7 +84,7 @@ func (u *CreateEnglishItemUsecaseImpl) Create(req *dto.CreateEnglishItemRequest)
 	resp := &dto.CreateEnglishItemResponse{
 		Id:             englishItem.Id(),
 		Content:        englishItem.Content(),
-		JaTranslations: englishItem.JaTranslations(),
+		JaTranslations: englishItem.Translations(),
 		EnExplanation:  englishItem.EnExplanation(),
 		Imgs:           imgDTOs,
 		Examples:       exampleDTOs,
