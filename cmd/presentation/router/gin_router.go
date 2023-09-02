@@ -32,6 +32,7 @@ func NewGinRouter(uc controller.UserController, ec controller.EnglishItemControl
 	router.POST("/user/update", uc.UpdateProfile)
 	router.POST("/user/update/profile-img", uc.UpdateProfileImg)
 
+	router.GET("/english", ec.GetByUserIdAndContent)
 	router.GET("/english/proposal", ec.Proposal)
 	router.POST("/english/create", ec.Create)
 

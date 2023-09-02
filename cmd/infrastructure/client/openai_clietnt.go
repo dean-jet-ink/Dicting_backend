@@ -7,6 +7,7 @@ import (
 	"english/cmd/domain/model"
 	"english/config"
 	"fmt"
+	"log"
 
 	"github.com/sashabaranov/go-openai"
 )
@@ -36,7 +37,7 @@ func (c *OpenAIClient) GetTranslation(englishItem *model.EnglishItem) error {
 		return nil
 	}
 
-	englishItem.SetJaTranslations(answer.JaTranslations)
+	englishItem.SetTranslations(answer.Translations)
 	englishItem.SetEnExplanation(answer.EnExplanation)
 
 	return nil
@@ -82,7 +83,7 @@ func (c *OpenAIClient) createChatCompletion(ctx context.Context, prompt string) 
 
 func (c *OpenAIClient) translationPrompt(content string) string {
 	answerExample := model.Translation{
-		JaTranslations: []string{
+		Translations: []string{
 			"japanese",
 			"japanese",
 			"japanese",
@@ -92,7 +93,11 @@ func (c *OpenAIClient) translationPrompt(content string) string {
 
 	m, _ := json.Marshal(answerExample)
 
-	return fmt.Sprintf("[instructions]\ncreate three Japanese translations and a one-sentence basic English explanation of '%v' in JSON format.\n[answer of example]\n%v}", content, string(m))
+	prompt := fmt.Sprintf("[instructions]\ncreate three Japanese translations and a one-sentence basic English explanation of '%v' in JSON format.\n[answer of example]\n%v}", content, string(m))
+
+	log.Printf("translationPrompt: %s\n", prompt)
+
+	return prompt
 }
 
 func (c *OpenAIClient) examplePrompt(content string) string {
@@ -115,5 +120,9 @@ func (c *OpenAIClient) examplePrompt(content string) string {
 
 	m, _ := json.Marshal(answerExample)
 
-	return fmt.Sprintf("[instructions]\ncreate three sets of one-sentence basic English and its Japanese translation using %v in JSON format.\n[answer of example]\n%v}", content, string(m))
+	prompt := fmt.Sprintf("[instructions]\ncreate three sets of one-sentence basic English and its Japanese translation using %v in JSON format.\n[answer of example]\n%v}", content, string(m))
+
+	log.Printf("examplePrompt: %s\n", prompt)
+
+	return prompt
 }
