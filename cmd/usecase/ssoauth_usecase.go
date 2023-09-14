@@ -38,8 +38,7 @@ func NewSSOAuthUsecase(ur repository.UserRepository) SSOAuthUsecase {
 }
 
 func (lu *SSOAuthUsecaseImpl) RedirectOAuthConsent(req *dto.RedirectOAuthConsentRequest) (*dto.RedirectOAuthConsentResponse, error) {
-	idPName := req.IdPName
-	idPName = strings.ToUpper(idPName)
+	idPName := strings.ToUpper(req.IdPName)
 	idP, ok := lu.idPs[idPName]
 	if !ok {
 		return nil, errors.New("invalid idP name")
@@ -65,7 +64,8 @@ func (lu *SSOAuthUsecaseImpl) Callback(req *dto.CallbackRequest) (*dto.CallbackR
 		return nil, errors.New("invalid state")
 	}
 
-	idP, ok := lu.idPs[req.IdpName]
+	idpName := strings.ToUpper(req.IdpName)
+	idP, ok := lu.idPs[idpName]
 	if !ok {
 		return nil, errors.New("invalid idP name")
 	}
