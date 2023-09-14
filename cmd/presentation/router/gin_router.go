@@ -6,6 +6,7 @@ import (
 	"english/config"
 	"text/template"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,10 +14,18 @@ func NewGinRouter(uc controller.UserController, ec controller.EnglishItemControl
 	router := gin.Default()
 	mid := middleware.NewGinMiddleware()
 
-	if config.GoEnv() == "dev" {
-		router.Static("/static", "./static")
-	}
+	router.Static("/static", "./static")
+
+	// jwtの有効性の確認、及びjwt内のuser idをcontextに格納
 	router.Use(mid.JWTMiddleware)
+
+	// cors制約の設定
+	router.Use(cors.New(cors.Config{
+		AllowOrigins: []string{
+			config.FrontEndURL(),
+		},
+		AllowCredentials: true,
+	}))
 
 	router.GET("/", func(c *gin.Context) {
 		templ, _ := template.ParseFiles("mock/sso_test.html")
