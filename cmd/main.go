@@ -22,9 +22,10 @@ func main() {
 	signupUse := usecase.NewSignupUsecase(userRepo)
 	loginUse := usecase.NewLoginUsecase(userRepo)
 	ssoAuthUse := usecase.NewSSOAuthUsecase(userRepo)
+	getUserUse := usecase.NewGetUserUsecase(userRepo)
 	updateUserUse := usecase.NewUpdateUserProfileUsecase(userRepo)
 	updateProfileUse := usecase.NewUpdateProfileImgUsecase(userRepo)
-	userGinCon := controller.NewUserGinController(signupUse, loginUse, ssoAuthUse, updateUserUse, updateProfileUse)
+	userGinCon := controller.NewUserGinController(signupUse, loginUse, ssoAuthUse, getUserUse, updateUserUse, updateProfileUse)
 
 	chatGPTAPI := client.NewOpenAIAPI()
 	proposalUse := usecase.NewProposalEnglishItemUsecase(chatGPTAPI)

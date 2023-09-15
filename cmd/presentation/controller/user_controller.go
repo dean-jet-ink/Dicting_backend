@@ -23,6 +23,7 @@ type UserController interface {
 	Logout(c *gin.Context)
 	RedirectOAuthConsent(c *gin.Context)
 	OAuthCallback(c *gin.Context)
+	GetUser(c *gin.Context)
 	UpdateProfile(c *gin.Context)
 	UpdateProfileImg(c *gin.Context)
 }
@@ -31,15 +32,17 @@ type UserGinController struct {
 	su  usecase.SignupUsecase
 	lu  usecase.LoginUsecase
 	ssu usecase.SSOAuthUsecase
+	gu  usecase.GetUserUsecase
 	uu  usecase.UpdateUserUsecase
 	upu usecase.UpdateProfileImgUsecase
 }
 
-func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOAuthUsecase, uu usecase.UpdateUserUsecase, upu usecase.UpdateProfileImgUsecase) UserController {
+func NewUserGinController(su usecase.SignupUsecase, lu usecase.LoginUsecase, ssu usecase.SSOAuthUsecase, gu usecase.GetUserUsecase, uu usecase.UpdateUserUsecase, upu usecase.UpdateProfileImgUsecase) UserController {
 	return &UserGinController{
 		su:  su,
 		lu:  lu,
 		ssu: ssu,
+		gu:  gu,
 		uu:  uu,
 		upu: upu,
 	}
@@ -238,11 +241,14 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	uc.deleteCookie(c, "idp_name", "/auth/")
 	uc.deleteCookie(c, "is_login", "/auth/")
 
-	if isLogin {
-		c.String(http.StatusOK, jwtToken)
-	} else {
-		c.String(http.StatusCreated, jwtToken)
+	userId, err := userId(c)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
 	}
+	redirectURL := fmt.Sprintf("%v/auth/callback?user_id=%v", config.FrontEndURL(), userId)
+	c.Redirect(http.StatusFound, redirectURL)
 }
 
 func (uc *UserGinController) setJWT(c *gin.Context, jwtToken string) {
@@ -256,6 +262,24 @@ func (uc *UserGinController) setJWT(c *gin.Context, jwtToken string) {
 
 func (uc *UserGinController) deleteCookie(c *gin.Context, name, path string) {
 	c.SetCookie(name, "", -1, path, config.APIDomain(), config.GoEnv() != "dev", true)
+}
+
+func (uc *UserGinController) GetUser(c *gin.Context) {
+	id, err := userId(c)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	res, err := uc.gu.GetUser(id)
+	if err != nil {
+		log.Println(err)
+		c.JSON(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }
 
 func (uc *UserGinController) UpdateProfile(c *gin.Context) {
