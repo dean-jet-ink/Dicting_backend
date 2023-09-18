@@ -241,13 +241,7 @@ func (uc *UserGinController) OAuthCallback(c *gin.Context) {
 	uc.deleteCookie(c, "idp_name", "/auth/")
 	uc.deleteCookie(c, "is_login", "/auth/")
 
-	userId, err := userId(c)
-	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err.Error())
-		return
-	}
-	redirectURL := fmt.Sprintf("%v/auth/callback?user_id=%v", config.FrontEndURL(), userId)
+	redirectURL := fmt.Sprintf("%v/", config.FrontEndURL())
 	c.Redirect(http.StatusFound, redirectURL)
 }
 
