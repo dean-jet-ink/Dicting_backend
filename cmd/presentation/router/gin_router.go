@@ -38,6 +38,7 @@ func NewGinRouter(uc controller.UserController, ec controller.EnglishItemControl
 	router.GET("/auth", uc.RedirectOAuthConsent)
 	router.GET("/auth/callback", uc.OAuthCallback)
 
+	router.GET("/user", uc.GetUser)
 	router.POST("/user/update", uc.UpdateProfile)
 	router.POST("/user/update/profile-img", uc.UpdateProfileImg)
 
