@@ -1,10 +1,10 @@
 package middleware
 
 import (
+	"english/cmd/presentation/errhandle"
 	"english/config"
+	"errors"
 	"fmt"
-	"log"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +18,16 @@ func NewGinMiddleware() *GinMiddleware {
 	return &GinMiddleware{}
 }
 
+func (gm *GinMiddleware) RecoverPanic(c *gin.Context) {
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("%v", r)
+			errhandle.HandleErrorJSON(err, c)
+		}
+	}()
+	c.Next()
+}
+
 func (gm *GinMiddleware) JWTMiddleware(c *gin.Context) {
 	path := c.Request.URL.Path
 	if path == "/" || path == "/login" || path == "/signup" || strings.Contains(path, "/auth") {
@@ -27,8 +37,8 @@ func (gm *GinMiddleware) JWTMiddleware(c *gin.Context) {
 
 	tokenStr, err := c.Cookie("token")
 	if err != nil {
-		log.Printf("Error: %v\n", err)
-		c.JSON(http.StatusForbidden, "missing jwt token")
+		jwtErr := errors.New("missing jwt token")
+		errhandle.HandleErrorJSON(jwtErr, c)
 		c.Abort()
 		return
 	}
@@ -43,16 +53,14 @@ func (gm *GinMiddleware) JWTMiddleware(c *gin.Context) {
 
 	token, err := jwt.Parse(tokenStr, keyFunc)
 	if err != nil {
-		log.Printf("Error: %v\n", err)
-		c.JSON(http.StatusForbidden, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		c.Abort()
 		return
 	}
 
 	if !token.Valid {
-		message := "invalid token"
-		log.Printf("Error: %v\n", message)
-		c.JSON(http.StatusForbidden, message)
+		err := errors.New("invalid token")
+		errhandle.HandleErrorJSON(err, c)
 		c.Abort()
 		return
 	}

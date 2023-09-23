@@ -101,9 +101,18 @@ func (ur *UserMySQLRepository) Update(user *model.User) error {
 
 func (ur *UserMySQLRepository) modelToEntity(m *model.User) (*entity.UserEntity, error) {
 	e := &entity.UserEntity{}
+
 	err := copier.Copy(e, m)
 	if err != nil {
 		return nil, err
+	}
+
+	if m.Iss() != "" && m.Sub() != "" {
+		e.Iss.String = m.Iss()
+		e.Sub.String = m.Sub()
+	} else {
+		e.Iss.Valid = false
+		e.Sub.Valid = false
 	}
 
 	return e, nil

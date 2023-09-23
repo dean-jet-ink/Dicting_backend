@@ -11,10 +11,13 @@ import (
 )
 
 func NewGinRouter(uc controller.UserController, ec controller.EnglishItemController) *gin.Engine {
-	router := gin.Default()
+	router := gin.New()
 	mid := middleware.NewGinMiddleware()
 
 	router.Static("/static", "./static")
+
+	// パニック時のミドルウェア
+	router.Use(mid.RecoverPanic)
 
 	// jwtの有効性の確認、及びjwt内のuser idをcontextに格納
 	router.Use(mid.JWTMiddleware)
@@ -24,6 +27,8 @@ func NewGinRouter(uc controller.UserController, ec controller.EnglishItemControl
 		AllowOrigins: []string{
 			config.FrontEndURL(),
 		},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}))
 
