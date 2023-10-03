@@ -33,7 +33,10 @@ func handleError(err error, c *gin.Context, fn func(code int, resp *ErrorRespons
 	} else if errors.Is(myerror.ErrMismatchedPassword, err) {
 		// 401
 		fn(http.StatusUnauthorized, resp, c)
-	} else if errors.Is(myerror.ErrUnverifiedEmail, err) {
+	} else if errors.Is(myerror.ErrUnverifiedEmail, err) ||
+		errors.Is(myerror.ErrMissingJWT, err) ||
+		errors.Is(myerror.ErrInvalidToken, err) ||
+		errors.Is(myerror.ErrUnexpectedSigningMethod, err) {
 		// 403
 		fn(http.StatusForbidden, resp, c)
 	} else {

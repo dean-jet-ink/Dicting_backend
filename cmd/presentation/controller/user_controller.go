@@ -130,7 +130,7 @@ func (uc *UserGinController) RedirectOAuthConsent(c *gin.Context) {
 }
 
 func (uc *UserGinController) OAuthCallback(c *gin.Context) {
-	errRedirectURL := fmt.Sprintf("%v/auth/login", config.FrontEndURL())
+	errRedirectURL := fmt.Sprintf("%v/login", config.FrontEndURL())
 
 	req := &dto.CallbackRequest{}
 	if err := c.ShouldBindQuery(req); err != nil {

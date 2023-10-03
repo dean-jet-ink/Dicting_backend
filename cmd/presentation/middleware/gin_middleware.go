@@ -3,6 +3,7 @@ package middleware
 import (
 	"english/cmd/presentation/errhandle"
 	"english/config"
+	"english/myerror"
 	"errors"
 	"fmt"
 	"strings"
@@ -37,15 +38,14 @@ func (gm *GinMiddleware) JWTMiddleware(c *gin.Context) {
 
 	tokenStr, err := c.Cookie("token")
 	if err != nil {
-		jwtErr := errors.New("missing jwt token")
-		errhandle.HandleErrorJSON(jwtErr, c)
+		errhandle.HandleErrorJSON(myerror.ErrMissingJWT, c)
 		c.Abort()
 		return
 	}
 
 	keyFunc := func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method '%v'", token.Header["alg"])
+			return nil, fmt.Errorf("%v '%w'", myerror.ErrUnexpectedSigningMethod, errors.New(token.Header["alg"].(string)))
 		}
 
 		return []byte(config.Secret()), nil
@@ -59,8 +59,7 @@ func (gm *GinMiddleware) JWTMiddleware(c *gin.Context) {
 	}
 
 	if !token.Valid {
-		err := errors.New("invalid token")
-		errhandle.HandleErrorJSON(err, c)
+		errhandle.HandleErrorJSON(myerror.ErrInvalidToken, c)
 		c.Abort()
 		return
 	}
