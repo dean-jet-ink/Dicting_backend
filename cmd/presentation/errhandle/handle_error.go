@@ -39,6 +39,9 @@ func handleError(err error, c *gin.Context, fn func(code int, resp *ErrorRespons
 		errors.Is(myerror.ErrUnexpectedSigningMethod, err) {
 		// 403
 		fn(http.StatusForbidden, resp, c)
+	} else if errors.Is(myerror.ErrImgNotFound, err) {
+		// 404
+		fn(http.StatusNotFound, resp, c)
 	} else {
 		// 500
 		fn(http.StatusInternalServerError, resp, c)

@@ -3,6 +3,7 @@ package myerror
 import "errors"
 
 var ErrRecordNotFound = errors.New("record is not found")
+var ErrImgNotFound = errors.New("image is not found")
 var ErrMismatchedPassword = errors.New("mismatched password")
 var ErrDuplicatedKey = errors.New("duplicate entry")
 var ErrBindingFailure = errors.New("failed to bind")

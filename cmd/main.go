@@ -7,6 +7,7 @@ import (
 	"english/cmd/presentation/controller"
 	"english/cmd/presentation/router"
 	"english/cmd/usecase"
+	"english/cmd/usecase/validator"
 	"english/config"
 	"fmt"
 )
@@ -31,7 +32,8 @@ func main() {
 	proposalUse := usecase.NewProposalEnglishItemUsecase(chatGPTAPI)
 	englishItemRepo := gateway.NewEnglishItemMySQLReporitory(db)
 	fileStorageRepo := gateway.NewFileStorageGCSRepository()
-	createEnglishItemUse := usecase.NewCreateEnglishItemUsecase(englishItemRepo, fileStorageRepo)
+	englishItemValidator := validator.NewEnglishItemValidator()
+	createEnglishItemUse := usecase.NewCreateEnglishItemUsecase(englishItemRepo, fileStorageRepo, englishItemValidator)
 	findAllEnglishItemUse := usecase.NewGetEnglishItemUsecase(englishItemRepo)
 	ec := controller.NewEnglishItemController(proposalUse, createEnglishItemUse, findAllEnglishItemUse)
 

@@ -15,7 +15,7 @@ type UserEntity struct {
 	Sub             sql.NullString       `json:"sub" gorm:"type:varchar(255);uniqueIndex:idx_iss_sub"`
 	CreatedAt       time.Time            `json:"created_at"`
 	UpdatedAt       time.Time            `json:"updated_at"`
-	EnglishItems    []*EnglishItemEntity `json:"english_items" gorm:"foreignKey:UserId"`
+	EnglishItems    []*EnglishItemEntity `json:"english_items" gorm:"foreignKey:UserId; constraint:OnDelete:CASCADE"`
 }
 
 func (u *UserEntity) TableName() string {

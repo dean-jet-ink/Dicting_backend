@@ -23,7 +23,7 @@ func NewProposalEnglishItemUsecase(chatAIAPI api.ChatAIAPI) ProposalEnglishItemU
 }
 
 func (pu *ProposalEnglishItemUsecaseImpl) Proposal(req *dto.ProposalEnglishItemRequest) (*dto.ProposalEnglishItemResponse, error) {
-	englishItem := model.NewEnglishItem("", req.Content, nil, "", nil, nil, "")
+	englishItem := model.NewEnglishItem("", req.Content, nil, "", nil, nil, "", model.Learning)
 
 	wg := sync.WaitGroup{}
 	errChan := make(chan error)

@@ -1,9 +1,9 @@
 package controller
 
 import (
+	"english/cmd/presentation/errhandle"
 	"english/cmd/usecase"
 	"english/cmd/usecase/dto"
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -32,21 +32,18 @@ func NewEnglishItemController(proposalUse usecase.ProposalEnglishItemUsecase, cr
 func (ec *EnglishItemGinController) Proposal(c *gin.Context) {
 	req := &dto.ProposalEnglishItemRequest{}
 	if err := c.ShouldBindQuery(req); err != nil {
-		log.Println(err)
-		c.JSON(http.StatusBadRequest, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
 	if err := Validate(req); err != nil {
-		log.Println(err)
-		c.JSON(http.StatusBadRequest, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
 	resp, err := ec.proposalUse.Proposal(req)
 	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
@@ -56,32 +53,28 @@ func (ec *EnglishItemGinController) Proposal(c *gin.Context) {
 func (ec *EnglishItemGinController) Create(c *gin.Context) {
 	req := &dto.CreateEnglishItemRequest{}
 	if err := c.BindJSON(req); err != nil {
-		log.Println(err)
-		c.JSON(http.StatusBadRequest, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
 	if err := Validate(req); err != nil {
-		log.Println(err)
-		c.JSON(http.StatusBadRequest, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
 	userId, err := userId(c)
 	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err.Error())
-		return
-	}
-	req.UserId = userId
-	resp, err := ec.createUse.Create(req)
-	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
-	c.JSON(http.StatusCreated, resp)
+	req.UserId = userId
+	if err := ec.createUse.Create(req); err != nil {
+		errhandle.HandleErrorJSON(err, c)
+		return
+	}
+
+	c.Status(http.StatusCreated)
 }
 
 func (ec *EnglishItemGinController) GetByUserIdAndContent(c *gin.Context) {
@@ -89,15 +82,13 @@ func (ec *EnglishItemGinController) GetByUserIdAndContent(c *gin.Context) {
 
 	userId, err := userId(c)
 	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
 	resp, err := ec.getUse.GetByUserIdAndContent(userId, content)
 	if err != nil {
-		log.Println(err)
-		c.JSON(http.StatusInternalServerError, err.Error())
+		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
