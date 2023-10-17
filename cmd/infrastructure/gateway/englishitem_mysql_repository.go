@@ -4,9 +4,9 @@ import (
 	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
 	"english/cmd/infrastructure/entity"
-	"fmt"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type EnglishItemMySQLRepository struct {
@@ -29,9 +29,9 @@ func (er *EnglishItemMySQLRepository) Create(englishItem *model.EnglishItem) err
 	return nil
 }
 
-func (er *EnglishItemMySQLRepository) FindByUserIdAndContent(userId, content string) ([]*model.EnglishItem, error) {
+func (er *EnglishItemMySQLRepository) FindEnglishItemInfosByUserId(userId string) ([]*model.EnglishItem, error) {
 	entities := []*entity.EnglishItemEntity{}
-	if err := er.db.Preload("Imgs").Preload("Examples").Preload("Proficiencies").Where("content = ?", fmt.Sprintf("%v%%", content)).Find(&entities).Error; err != nil {
+	if err := er.db.Preload("Imgs", "is_thumbnail = ?", true).Where("user_id = ?", userId).Find(&entities).Error; err != nil {
 		return nil, err
 	}
 
@@ -45,20 +45,16 @@ func (er *EnglishItemMySQLRepository) FindByUserIdAndContent(userId, content str
 	return englishItems, nil
 }
 
-func (er *EnglishItemMySQLRepository) FindByUserId() ([]*model.EnglishItem, error) {
-	entities := []*entity.EnglishItemEntity{}
-	if err := er.db.Preload("Imgs").Preload("Proficiencies").Where("isThumbnail = ?", true).Find(&entities).Error; err != nil {
+func (er *EnglishItemMySQLRepository) FindByUserIdAndContent(userId, content string) (*model.EnglishItem, error) {
+	entity := &entity.EnglishItemEntity{}
+	if err := er.db.Preload(clause.Associations).Where("user_id = ? AND content = ?", userId, content).Find(entity).Error; err != nil {
 		return nil, err
 	}
 
-	englishItems := []*model.EnglishItem{}
-	for _, entity := range entities {
-		englishItem := &model.EnglishItem{}
-		er.entityToModel(entity, englishItem)
-		englishItems = append(englishItems, englishItem)
-	}
+	englishItem := &model.EnglishItem{}
+	er.entityToModel(entity, englishItem)
 
-	return englishItems, nil
+	return englishItem, nil
 }
 
 func (er *EnglishItemMySQLRepository) modelToEntity(m *model.EnglishItem) *entity.EnglishItemEntity {
@@ -78,6 +74,7 @@ func (er *EnglishItemMySQLRepository) modelToEntity(m *model.EnglishItem) *entit
 		enti := &entity.ImgEntity{
 			Id:            img.Id(),
 			URL:           img.URL(),
+			IsThumbnail:   img.IsThumbnail(),
 			EnglishItemId: m.Id(),
 		}
 		imgEntities = append(imgEntities, enti)
@@ -89,6 +86,8 @@ func (er *EnglishItemMySQLRepository) modelToEntity(m *model.EnglishItem) *entit
 		Translations:  m.JoinTranslations(),
 		EnExplanation: m.EnExplanation(),
 		UserId:        m.UserId(),
+		Proficiency:   m.Proficiency(),
+		Exp:           m.Exp(),
 		Examples:      exampleEntities,
 		Imgs:          imgEntities,
 	}
@@ -100,8 +99,8 @@ func (er *EnglishItemMySQLRepository) entityToModel(e *entity.EnglishItemEntity,
 	m.SetTranslationsFromStr(e.Translations)
 	m.SetEnExplanation(e.EnExplanation)
 	m.SetUserId(e.UserId)
-	m.SetProficiency(model.Proficiency(e.Proficiency.Proficiency))
-	m.SetExp(e.Proficiency.Exp)
+	m.SetProficiency(model.Proficiency(e.Proficiency))
+	m.SetExp(e.Exp)
 
 	exampleDomains := []*model.Example{}
 	for _, example := range e.Examples {

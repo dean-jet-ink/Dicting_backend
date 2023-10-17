@@ -250,6 +250,7 @@ func (uc *UserGinController) deleteCookie(c *gin.Context, name, path string) {
 }
 
 func (uc *UserGinController) GetUser(c *gin.Context) {
+
 	id, err := userId(c)
 	if err != nil {
 		errhandle.HandleErrorJSON(err, c)

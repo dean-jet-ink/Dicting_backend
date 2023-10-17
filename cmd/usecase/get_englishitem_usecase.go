@@ -7,6 +7,7 @@ import (
 )
 
 type GetEnglishItemUsecase interface {
+	GetEnglishItemInfoByUserId(userId string) (*dto.GetEnglishItemsResponse, error)
 	GetByUserIdAndContent(userId, content string) (*dto.GetEnglishItemResponse, error)
 }
 
@@ -20,30 +21,52 @@ func NewGetEnglishItemUsecase(er repository.EnglishItemRepository) GetEnglishIte
 	}
 }
 
-func (u *GetEnglishItemUsecaseImpl) GetByUserIdAndContent(userId, content string) (*dto.GetEnglishItemResponse, error) {
-	englishItems, err := u.er.FindByUserIdAndContent(userId, content)
+func (u *GetEnglishItemUsecaseImpl) GetEnglishItemInfoByUserId(userId string) (*dto.GetEnglishItemsResponse, error) {
+	englishItems, err := u.er.FindEnglishItemInfosByUserId(userId)
 	if err != nil {
 		return nil, err
 	}
 
-	englishItemDTOs := []*dto.EnglishItem{}
-	for _, e := range englishItems {
-		examples := u.exampleDomainsToDTOs(e.Examples())
-		imgs := u.imgDomainsToDTOs(e.Imgs())
-		englishItemDTO := &dto.EnglishItem{
-			Id:            e.Id(),
-			Content:       e.Content(),
-			Translations:  e.Translations(),
-			EnExplanation: e.EnExplanation(),
-			Examples:      examples,
-			Imgs:          imgs,
+	resp := &dto.GetEnglishItemsResponse{
+		EnglishItems: []*dto.EnglishItem{},
+	}
+
+	for _, item := range englishItems {
+		if len(item.Imgs()) == 0 {
+			item.SetImgs([]*model.Img{model.NewImg("", "", false)})
 		}
 
-		englishItemDTOs = append(englishItemDTOs, englishItemDTO)
+		dto := &dto.EnglishItem{
+			Id:            item.Id(),
+			Content:       item.Content(),
+			Translations:  item.Translations(),
+			EnExplanation: item.EnExplanation(),
+			Img:           item.Imgs()[0].URL(),
+			Proficiency:   item.Proficiency(),
+			Exp:           item.Exp(),
+		}
+
+		resp.EnglishItems = append(resp.EnglishItems, dto)
+	}
+
+	return resp, nil
+}
+
+func (u *GetEnglishItemUsecaseImpl) GetByUserIdAndContent(userId, content string) (*dto.GetEnglishItemResponse, error) {
+	englishItem, err := u.er.FindByUserIdAndContent(userId, content)
+	if err != nil {
+		return nil, err
 	}
 
 	resp := &dto.GetEnglishItemResponse{
-		EnglishItems: englishItemDTOs,
+		Id:            englishItem.Id(),
+		Content:       englishItem.Content(),
+		Translations:  englishItem.Translations(),
+		EnExplanation: englishItem.EnExplanation(),
+		Examples:      u.exampleDomainsToDTOs(englishItem.Examples()),
+		Imgs:          u.imgDomainsToDTOs(englishItem.Imgs()),
+		Proficiency:   englishItem.Proficiency(),
+		Exp:           englishItem.Exp(),
 	}
 
 	return resp, nil
@@ -67,8 +90,9 @@ func (u *GetEnglishItemUsecaseImpl) imgDomainsToDTOs(imgs []*model.Img) []*dto.I
 	imgDTOs := []*dto.Img{}
 	for _, img := range imgs {
 		imgDTO := &dto.Img{
-			Id:  img.Id(),
-			URL: img.URL(),
+			Id:          img.Id(),
+			URL:         img.URL(),
+			IsThumbnail: img.IsThumbnail(),
 		}
 		imgDTOs = append(imgDTOs, imgDTO)
 	}
