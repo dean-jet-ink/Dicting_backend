@@ -1,8 +1,11 @@
 package repository
 
-import "mime/multipart"
+import (
+	"english/cmd/domain/model"
+	"mime/multipart"
+)
 
 type FileStorageRepository interface {
-	Upload(file *multipart.FileHeader, preURL string) (string, error)
-	UploadFromURLs(urls []string, preURLs []string) ([]string, error)
+	Upload(file *multipart.FileHeader, preImg *model.Img) error
+	UploadImgs(imgs []*model.Img, preImgs []*model.Img) error
 }

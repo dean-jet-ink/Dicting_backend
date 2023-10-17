@@ -2,8 +2,11 @@ package gateway
 
 import (
 	"english/algo"
+	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
 	"english/config"
+	"english/myerror"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -27,69 +30,53 @@ func NewFileStorageGCSRepository() repository.FileStorageRepository {
 	return &FileStorageGCSRepository{}
 }
 
-func (r *FileStorageGCSRepository) Upload(file *multipart.FileHeader, preURL string) (string, error) {
-	return "", nil
+func (r *FileStorageGCSRepository) Upload(file *multipart.FileHeader, preImg *model.Img) error {
+	return nil
 }
 
-func (r *FileStorageGCSRepository) UploadFromURLs(urls []string, preURLs []string) ([]string, error) {
+func (r *FileStorageGCSRepository) UploadImgs(imgs []*model.Img, preImgs []*model.Img) error {
 	wg := &sync.WaitGroup{}
 
-	imgFileChan := make(chan *ImgFile, len(urls))
 	errChan := make(chan error)
 
-	for _, url := range urls {
+	for _, img := range imgs {
 		wg.Add(1)
-		go r.fetchFileFromURL(wg, url, imgFileChan, errChan)
+		go r.fetchFileFromURL(wg, img, errChan)
 	}
 
 	go func() {
 		wg.Wait()
-		close(imgFileChan)
+		close(errChan)
 	}()
 
-	imgFiles := []*ImgFile{}
-
-outer:
-	for {
-		select {
-		case imgFile, ok := <-imgFileChan:
-			if ok {
-				imgFiles = append(imgFiles, imgFile)
-			} else {
-				break outer
-			}
-		case err := <-errChan:
-			return nil, err
-		}
+	for err := range errChan {
+		return err
 	}
 
-	newURLs := []string{}
-	for _, imgFile := range imgFiles {
-		if err := r.uploadFile(imgFile); err != nil {
-			return nil, err
-		}
+	var urls []string
 
-		newURLs = append(newURLs, imgFile.URL)
+	for _, img := range preImgs {
+		urls = append(urls, img.URL())
 	}
 
-	if err := r.deletePreFiles(preURLs); err != nil {
-		return nil, err
+	if err := r.deletePreFiles(urls); err != nil {
+		return err
 	}
 
-	return newURLs, nil
+	return nil
 }
 
-func (r *FileStorageGCSRepository) fetchFileFromURL(wg *sync.WaitGroup, url string, imgFileChan chan *ImgFile, errChan chan error) {
+func (r *FileStorageGCSRepository) fetchFileFromURL(wg *sync.WaitGroup, img *model.Img, errChan chan error) {
 	defer wg.Done()
 
-	resp, err := http.Get(url)
+	resp, err := http.Get(img.URL())
 	if err != nil {
 		errChan <- err
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		errChan <- fmt.Errorf("failed to get image file: %v", resp.StatusCode)
+		errChan <- fmt.Errorf("%v: %w", myerror.ErrImgNotFound, errors.New("failed to get image file from URL"))
 		return
 	}
 
@@ -111,7 +98,12 @@ func (r *FileStorageGCSRepository) fetchFileFromURL(wg *sync.WaitGroup, url stri
 		Body:     resp.Body,
 		FileName: fileName,
 	}
-	imgFileChan <- imgFile
+
+	if err := r.uploadFile(imgFile); err != nil {
+		errChan <- err
+	}
+
+	img.SetURL(imgFile.URL)
 }
 
 func (r *FileStorageGCSRepository) uploadFile(file *ImgFile) error {

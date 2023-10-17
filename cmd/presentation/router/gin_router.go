@@ -11,21 +11,27 @@ import (
 )
 
 func NewGinRouter(uc controller.UserController, ec controller.EnglishItemController) *gin.Engine {
-	router := gin.Default()
+	router := gin.New()
 	mid := middleware.NewGinMiddleware()
-
-	router.Static("/static", "./static")
-
-	// jwtの有効性の確認、及びjwt内のuser idをcontextに格納
-	router.Use(mid.JWTMiddleware)
 
 	// cors制約の設定
 	router.Use(cors.New(cors.Config{
 		AllowOrigins: []string{
 			config.FrontEndURL(),
 		},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		AllowCredentials: true,
 	}))
+
+	// 静的ファイルの設定
+	router.Static("/static", "./static")
+
+	// パニック時のミドルウェア
+	router.Use(mid.RecoverPanic)
+
+	// jwtの有効性の確認、及びjwt内のuser idをcontextに格納
+	router.Use(mid.JWTMiddleware)
 
 	router.GET("/", func(c *gin.Context) {
 		templ, _ := template.ParseFiles("mock/sso_test.html")
@@ -42,9 +48,10 @@ func NewGinRouter(uc controller.UserController, ec controller.EnglishItemControl
 	router.POST("/user/update", uc.UpdateProfile)
 	router.POST("/user/update/profile-img", uc.UpdateProfileImg)
 
-	router.GET("/english", ec.GetByUserIdAndContent)
+	router.GET("/english", ec.GetByUserId)
+	router.GET("/english/:content", ec.GetByUserIdAndContent)
 	router.GET("/english/proposal", ec.Proposal)
-	router.POST("/english/create", ec.Create)
+	router.POST("/english", ec.Create)
 
 	return router
 }
