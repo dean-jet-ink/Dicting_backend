@@ -22,7 +22,7 @@ const (
 	Mastered   = Proficiency("Mastered")
 )
 
-func NewEnglishItem(id, content string, translations []string, enExplanation string, examples []*Example, imgs []*Img, userId string, proficiency Proficiency) *EnglishItem {
+func NewEnglishItem(id, content string, translations []string, enExplanation string, examples []*Example, imgs []*Img, userId string, proficiency Proficiency, exp uint) *EnglishItem {
 	return &EnglishItem{
 		id:            id,
 		content:       content,

@@ -295,7 +295,7 @@ func (uc *UserGinController) UpdateProfile(c *gin.Context) {
 }
 
 func (uc *UserGinController) UpdateProfileImg(c *gin.Context) {
-	file, err := c.FormFile("profile_img")
+	file, err := c.FormFile("image")
 	if err != nil {
 		errhandle.HandleErrorJSON(myerror.ErrFormFileNotFound, c)
 		return
@@ -352,8 +352,8 @@ func (uc *UserGinController) UpdateProfileImg(c *gin.Context) {
 	}
 
 	updateUserReq := &dto.UpdateUserRequest{
-		Id:            id,
-		ProfileImgURL: updateProfileImgResp.ProfileImgURL,
+		Id:    id,
+		Image: updateProfileImgResp.ProfileImgURL,
 	}
 
 	updateUserResp, err := uc.uu.Update(updateUserReq)

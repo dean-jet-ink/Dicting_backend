@@ -59,7 +59,21 @@ func (r *FileStorageGCSRepository) UploadImgs(imgs []*model.Img, preImgs []*mode
 		urls = append(urls, img.URL())
 	}
 
-	if err := r.deletePreFiles(urls); err != nil {
+	if err := r.deleteImgs(urls); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *FileStorageGCSRepository) DeleteImgs(imgs []*model.Img) error {
+	urls := make([]string, 0)
+
+	for _, img := range imgs {
+		urls = append(urls, img.URL())
+	}
+
+	if err := r.deleteImgs(urls); err != nil {
 		return err
 	}
 
@@ -141,9 +155,9 @@ func getExtensionByContentType(contentType string) (string, error) {
 	}
 }
 
-func (r *FileStorageGCSRepository) deletePreFiles(preURLs []string) error {
+func (r *FileStorageGCSRepository) deleteImgs(urls []string) error {
 	if config.GoEnv() == "dev" {
-		for _, url := range preURLs {
+		for _, url := range urls {
 			params := strings.Split(url, "/")
 			preFileName := params[len(params)-1]
 			preFilePath := fmt.Sprintf("./static/img/english/%v", preFileName)

@@ -35,7 +35,9 @@ func main() {
 	englishItemValidator := validator.NewEnglishItemValidator()
 	createEnglishItemUse := usecase.NewCreateEnglishItemUsecase(englishItemRepo, fileStorageRepo, englishItemValidator)
 	findAllEnglishItemUse := usecase.NewGetEnglishItemUsecase(englishItemRepo)
-	ec := controller.NewEnglishItemController(proposalUse, createEnglishItemUse, findAllEnglishItemUse)
+	updateEnglishItemUse := usecase.NewUpdateEnglishItemUsecase(englishItemRepo, fileStorageRepo, englishItemValidator)
+	deleteEnglishItemUse := usecase.NewDeleteEnglishItemUsecase(englishItemRepo, fileStorageRepo)
+	ec := controller.NewEnglishItemController(proposalUse, createEnglishItemUse, findAllEnglishItemUse, updateEnglishItemUse, deleteEnglishItemUse)
 
 	router := router.NewGinRouter(userGinCon, ec)
 

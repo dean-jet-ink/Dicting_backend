@@ -4,6 +4,7 @@ import (
 	"english/cmd/presentation/errhandle"
 	"english/cmd/usecase"
 	"english/cmd/usecase/dto"
+	"english/myerror"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,12 @@ import (
 
 type EnglishItemController interface {
 	Create(c *gin.Context)
+	Update(c *gin.Context)
+	Delete(c *gin.Context)
 	Proposal(c *gin.Context)
+	ProposalTranslation(c *gin.Context)
+	ProposalExplanation(c *gin.Context)
+	ProposalExample(c *gin.Context)
 	GetByUserId(c *gin.Context)
 	GetByUserIdAndContent(c *gin.Context)
 }
@@ -20,25 +26,29 @@ type EnglishItemGinController struct {
 	proposalUse usecase.ProposalEnglishItemUsecase
 	createUse   usecase.CreateEnglishItemUsecase
 	getUse      usecase.GetEnglishItemUsecase
+	updateUse   usecase.UpdateEnglishItemUsecase
+	deleteUse   usecase.DeleteEnglishItemUsecase
 }
 
-func NewEnglishItemController(proposalUse usecase.ProposalEnglishItemUsecase, createUse usecase.CreateEnglishItemUsecase, getUse usecase.GetEnglishItemUsecase) EnglishItemController {
+func NewEnglishItemController(proposalUse usecase.ProposalEnglishItemUsecase, createUse usecase.CreateEnglishItemUsecase, getUse usecase.GetEnglishItemUsecase, updateUse usecase.UpdateEnglishItemUsecase, deleteUse usecase.DeleteEnglishItemUsecase) EnglishItemController {
 	return &EnglishItemGinController{
 		proposalUse: proposalUse,
 		createUse:   createUse,
 		getUse:      getUse,
+		updateUse:   updateUse,
+		deleteUse:   deleteUse,
 	}
 }
 
 func (ec *EnglishItemGinController) Proposal(c *gin.Context) {
 	req := &dto.ProposalEnglishItemRequest{}
 	if err := c.ShouldBindQuery(req); err != nil {
-		errhandle.HandleErrorJSON(err, c)
+		errhandle.HandleErrorJSON(myerror.ErrBindingFailure, c)
 		return
 	}
 
 	if err := Validate(req); err != nil {
-		errhandle.HandleErrorJSON(err, c)
+		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
 		return
 	}
 
@@ -51,15 +61,81 @@ func (ec *EnglishItemGinController) Proposal(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (ec *EnglishItemGinController) Create(c *gin.Context) {
-	req := &dto.CreateEnglishItemRequest{}
-	if err := c.BindJSON(req); err != nil {
-		errhandle.HandleErrorJSON(err, c)
+func (ec *EnglishItemGinController) ProposalTranslation(c *gin.Context) {
+	req := &dto.ProposalEnglishItemRequest{}
+
+	if err := c.ShouldBindQuery(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrBindingFailure, c)
 		return
 	}
 
 	if err := Validate(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
+		return
+	}
+
+	resp, err := ec.proposalUse.ProposalTranslation(req)
+	if err != nil {
 		errhandle.HandleErrorJSON(err, c)
+		return
+	}
+
+	c.String(http.StatusOK, resp)
+}
+
+func (ec *EnglishItemGinController) ProposalExplanation(c *gin.Context) {
+	req := &dto.ProposalEnglishItemRequest{}
+
+	if err := c.ShouldBindQuery(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrBindingFailure, c)
+		return
+	}
+
+	if err := Validate(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
+		return
+	}
+
+	resp, err := ec.proposalUse.ProposalExplanation(req)
+	if err != nil {
+		errhandle.HandleErrorJSON(err, c)
+		return
+	}
+
+	c.String(http.StatusOK, resp)
+}
+
+func (ec *EnglishItemGinController) ProposalExample(c *gin.Context) {
+	req := &dto.ProposalEnglishItemRequest{}
+
+	if err := c.ShouldBindQuery(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrBindingFailure, c)
+		return
+	}
+
+	if err := Validate(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
+		return
+	}
+
+	resp, err := ec.proposalUse.ProposalExample(req)
+	if err != nil {
+		errhandle.HandleErrorJSON(err, c)
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func (ec *EnglishItemGinController) Create(c *gin.Context) {
+	req := &dto.CreateEnglishItemRequest{}
+	if err := c.BindJSON(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrBindingFailure, c)
+		return
+	}
+
+	if err := Validate(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
 		return
 	}
 
@@ -76,6 +152,48 @@ func (ec *EnglishItemGinController) Create(c *gin.Context) {
 	}
 
 	c.Status(http.StatusCreated)
+}
+
+func (ec *EnglishItemGinController) Update(c *gin.Context) {
+	req := &dto.UpdateEnglishItemRequest{}
+	if err := c.BindJSON(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrBindingFailure, c)
+		return
+	}
+
+	if err := Validate(req); err != nil {
+		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
+		return
+	}
+
+	userId, err := userId(c)
+	if err != nil {
+		errhandle.HandleErrorJSON(err, c)
+		return
+	}
+
+	req.UserId = userId
+	if err := ec.updateUse.Update(req); err != nil {
+		errhandle.HandleErrorJSON(err, c)
+		return
+	}
+
+	c.Status(http.StatusCreated)
+}
+
+func (ec *EnglishItemGinController) Delete(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
+		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
+		return
+	}
+
+	if err := ec.deleteUse.Delete(id); err != nil {
+		errhandle.HandleErrorJSON(err, c)
+		return
+	}
+
+	c.Status(http.StatusOK)
 }
 
 func (ec *EnglishItemGinController) GetByUserId(c *gin.Context) {
@@ -101,6 +219,10 @@ func (ec *EnglishItemGinController) GetByUserId(c *gin.Context) {
 
 func (ec *EnglishItemGinController) GetByUserIdAndContent(c *gin.Context) {
 	content := c.Param("content")
+	if content == "" {
+		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
+		return
+	}
 
 	userId, err := userId(c)
 	if err != nil {

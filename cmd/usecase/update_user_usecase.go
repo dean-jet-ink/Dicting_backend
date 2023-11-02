@@ -21,16 +21,16 @@ func NewUpdateUserProfileUsecase(ur repository.UserRepository) UpdateUserUsecase
 }
 
 func (uu *UpdateUserProfileUsecase) Update(req *dto.UpdateUserRequest) (*dto.UpdateUserResponse, error) {
-	user := model.NewUser(req.Id, req.Email, "", req.Name, req.ProfileImgURL)
+	user := model.NewUser(req.Id, req.Email, "", req.Name, req.Image)
 
 	if err := uu.ur.Update(user); err != nil {
 		return nil, err
 	}
 
 	resp := &dto.UpdateUserResponse{
-		Email:         user.Email(),
-		Name:          user.Name(),
-		ProfileImgURL: user.ProfileImageURL(),
+		Email: user.Email(),
+		Name:  user.Name(),
+		Image: user.ProfileImageURL(),
 	}
 
 	return resp, nil

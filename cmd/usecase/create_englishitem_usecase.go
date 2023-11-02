@@ -30,20 +30,18 @@ func (u *CreateEnglishItemUsecaseImpl) Create(req *dto.CreateEnglishItemRequest)
 	imgs := []*model.Img{}
 	for _, reqImg := range req.Imgs {
 		img := model.NewImg(reqImg.Id, reqImg.URL, reqImg.IsThumbnail)
+
+		ulid, err := algo.GenerateULID()
+		if err != nil {
+			return err
+		}
+		img.SetId(ulid)
+
 		imgs = append(imgs, img)
 	}
 
 	if err := u.fileStorageRepo.UploadImgs(imgs, nil); err != nil {
 		return err
-	}
-
-	for _, img := range imgs {
-		ulid, err := algo.GenerateULID()
-		if err != nil {
-			return err
-		}
-
-		img.SetId(ulid)
 	}
 
 	examples := []*model.Example{}
@@ -62,7 +60,7 @@ func (u *CreateEnglishItemUsecaseImpl) Create(req *dto.CreateEnglishItemRequest)
 		return err
 	}
 
-	englishItem := model.NewEnglishItem(ulid, req.Content, req.Translations, req.EnExplanation, examples, imgs, req.UserId, model.Learning)
+	englishItem := model.NewEnglishItem(ulid, req.Content, req.Translations, req.EnExplanation, examples, imgs, req.UserId, model.Learning, 0)
 
 	if err := u.v.EnglishItemValidate(englishItem); err != nil {
 		return err

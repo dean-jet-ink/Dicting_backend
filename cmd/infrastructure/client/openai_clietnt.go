@@ -23,8 +23,8 @@ func NewOpenAIAPI() api.ChatAIAPI {
 	}
 }
 
-func (c *OpenAIClient) GetTranslation(englishItem *model.EnglishItem) error {
-	prompt := c.translationPrompt(englishItem.Content())
+func (c *OpenAIClient) GetTranslations(englishItem *model.EnglishItem) error {
+	prompt := c.translationsPrompt(englishItem.Content())
 
 	resp, err := c.createChatCompletion(context.Background(), prompt)
 	if err != nil {
@@ -43,8 +43,8 @@ func (c *OpenAIClient) GetTranslation(englishItem *model.EnglishItem) error {
 	return nil
 }
 
-func (c *OpenAIClient) GetExample(englishItem *model.EnglishItem) error {
-	prompt := c.examplePrompt(englishItem.Content())
+func (c *OpenAIClient) GetExamples(englishItem *model.EnglishItem) error {
+	prompt := c.examplesPrompt(englishItem.Content())
 
 	resp, err := c.createChatCompletion(context.Background(), prompt)
 	if err != nil {
@@ -60,6 +60,48 @@ func (c *OpenAIClient) GetExample(englishItem *model.EnglishItem) error {
 	englishItem.SetExamples(answer.Examples)
 
 	return nil
+}
+
+func (c *OpenAIClient) GetTranslation(content string) (string, error) {
+	prompt := c.translationPrompt(content)
+
+	resp, err := c.createChatCompletion(context.Background(), prompt)
+	if err != nil {
+		return "", err
+	}
+
+	return resp, nil
+}
+
+func (c *OpenAIClient) GetExplanation(content string) (string, error) {
+	prompt := c.explanationPrompt(content)
+
+	resp, err := c.createChatCompletion(context.Background(), prompt)
+	if err != nil {
+		return "", err
+	}
+
+	return resp, nil
+}
+
+func (c *OpenAIClient) GetExample(content string) (*model.Example, error) {
+	prompt := c.examplePrompt(content)
+
+	resp, err := c.createChatCompletion(context.Background(), prompt)
+
+	log.Println(resp)
+
+	if err != nil {
+		return nil, err
+	}
+
+	answer := &model.Example{}
+
+	if err = json.Unmarshal([]byte(resp), answer); err != nil {
+		return nil, err
+	}
+
+	return answer, nil
 }
 
 func (c *OpenAIClient) createChatCompletion(ctx context.Context, prompt string) (string, error) {
@@ -81,7 +123,7 @@ func (c *OpenAIClient) createChatCompletion(ctx context.Context, prompt string) 
 	return resp.Choices[0].Message.Content, nil
 }
 
-func (c *OpenAIClient) translationPrompt(content string) string {
+func (c *OpenAIClient) translationsPrompt(content string) string {
 	answerExample := model.Translation{
 		Translations: []string{
 			"japanese",
@@ -95,34 +137,57 @@ func (c *OpenAIClient) translationPrompt(content string) string {
 
 	prompt := fmt.Sprintf("[instructions]\ncreate three Japanese translations and a one-sentence basic English explanation of '%v' in JSON format.\n[answer of example]\n%v}", content, string(m))
 
-	log.Printf("translationPrompt: %s\n", prompt)
+	log.Printf("translationsPrompt: %s\n", prompt)
 
 	return prompt
 }
 
-func (c *OpenAIClient) examplePrompt(content string) string {
+func (c *OpenAIClient) translationPrompt(content string) string {
+	prompt := fmt.Sprintf("[instructions]\nTranslate '%v' into Japanese.\n[Return value]Japanese translation only}", content)
+
+	return prompt
+}
+
+func (c *OpenAIClient) explanationPrompt(content string) string {
+	prompt := fmt.Sprintf("[instructions]\ncreate a one-sentence basic English explanation of '%v'.}", content)
+
+	return prompt
+}
+
+func (c *OpenAIClient) examplesPrompt(content string) string {
 	answerExample := model.Examples{
 		Examples: []*model.Example{
 			{
-				Example:     "english",
-				Translation: "japanese",
+				Example:     "",
+				Translation: "",
 			},
 			{
-				Example:     "english",
-				Translation: "japanese",
+				Example:     "",
+				Translation: "",
 			},
 			{
-				Example:     "english",
-				Translation: "japanese",
+				Example:     "",
+				Translation: "",
 			},
 		},
 	}
 
 	m, _ := json.Marshal(answerExample)
 
-	prompt := fmt.Sprintf("[instructions]\ncreate three sets of one-sentence basic English and its Japanese translation using %v in JSON format.\n[answer of example]\n%v}", content, string(m))
+	prompt := fmt.Sprintf("[instructions]\ncreate three sets of one-sentence basic English and its Japanese translation using '%v' in JSON format.\n[json format]\n%v}", content, string(m))
 
-	log.Printf("examplePrompt: %s\n", prompt)
+	return prompt
+}
+
+func (c *OpenAIClient) examplePrompt(content string) string {
+	answerExample := model.Example{
+		Example:     "",
+		Translation: "",
+	}
+
+	m, _ := json.Marshal(answerExample)
+
+	prompt := fmt.Sprintf("[instructions]\ncreate a one-sentence basic English and its Japanese translation using '%v' in JSON format.\n[json format]\n%v}", content, string(m))
 
 	return prompt
 }

@@ -3,6 +3,9 @@ package api
 import "english/cmd/domain/model"
 
 type ChatAIAPI interface {
-	GetTranslation(englishItem *model.EnglishItem) error
-	GetExample(englishItem *model.EnglishItem) error
+	GetTranslations(englishItem *model.EnglishItem) error
+	GetExamples(englishItem *model.EnglishItem) error
+	GetTranslation(content string) (string, error)
+	GetExplanation(content string) (string, error)
+	GetExample(content string) (*model.Example, error)
 }
