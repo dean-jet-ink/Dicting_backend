@@ -45,13 +45,18 @@ func NewGinRouter(uc controller.UserController, ec controller.EnglishItemControl
 	router.GET("/auth/callback", uc.OAuthCallback)
 
 	router.GET("/user", uc.GetUser)
-	router.POST("/user/update", uc.UpdateProfile)
-	router.POST("/user/update/profile-img", uc.UpdateProfileImg)
+	router.PUT("/user", uc.UpdateProfile)
+	router.PUT("/user/profile-img", uc.UpdateProfileImg)
 
 	router.GET("/english", ec.GetByUserId)
 	router.GET("/english/:content", ec.GetByUserIdAndContent)
 	router.GET("/english/proposal", ec.Proposal)
+	router.GET("/english/proposal/translation", ec.ProposalTranslation)
+	router.GET("/english/proposal/explanation", ec.ProposalExplanation)
+	router.GET("/english/proposal/example", ec.ProposalExample)
 	router.POST("/english", ec.Create)
+	router.PUT("/english", ec.Update)
+	router.DELETE("/english/:id", ec.Delete)
 
 	return router
 }
