@@ -1,0 +1,23 @@
+# マイグレーション、及びアプリケーションのビルド
+FROM golang:1.20-alpine3.18 AS builder
+WORKDIR /builder
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN go run migrate/migrate.go
+
+# alpineベースのためCGOを無効にする必要はないが
+# 将来的に環境が変更された場合の保険として設定
+ENV CGO_ENABLED=0
+
+RUN go build -o dicting ./cmd
+
+# 実行環境
+FROM alpine:3.18
+
+# https通信に必要な公開鍵証明書を含むパッケージ
+RUN apk --no-cache add ca-certificates
+
+WORKDIR /usr/src/app
+COPY --from=builder /builder/dicting .
+CMD ["./dicting"]

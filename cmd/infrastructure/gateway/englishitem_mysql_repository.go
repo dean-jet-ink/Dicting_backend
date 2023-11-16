@@ -54,7 +54,7 @@ func (er *EnglishItemMySQLRepository) Delete(englishItemId string) error {
 
 func (er *EnglishItemMySQLRepository) FindEnglishItemInfosByUserId(userId string) ([]*model.EnglishItem, error) {
 	entities := []*entity.EnglishItemEntity{}
-	if err := er.db.Preload("Imgs", "is_thumbnail = ?", true).Where("user_id = ?", userId).Find(&entities).Error; err != nil {
+	if err := er.db.Preload("Imgs", "is_thumbnail = ?", true).Where("user_id = ?", userId).Order("content").Find(&entities).Error; err != nil {
 		return nil, err
 	}
 
@@ -68,9 +68,9 @@ func (er *EnglishItemMySQLRepository) FindEnglishItemInfosByUserId(userId string
 	return englishItems, nil
 }
 
-func (er *EnglishItemMySQLRepository) FindByUserIdAndContent(userId, content string) (*model.EnglishItem, error) {
+func (er *EnglishItemMySQLRepository) FindById(id string) (*model.EnglishItem, error) {
 	entity := &entity.EnglishItemEntity{}
-	if err := er.db.Preload(clause.Associations).Where("user_id = ? AND content = ?", userId, content).Find(entity).Error; err != nil {
+	if err := er.db.Preload(clause.Associations).Where("id = ?", id).Find(entity).Error; err != nil {
 		return nil, err
 	}
 

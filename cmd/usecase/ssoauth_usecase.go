@@ -2,11 +2,11 @@ package usecase
 
 import (
 	"context"
-	"english/algo"
 	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
 	"english/cmd/usecase/dto"
 	"english/config"
+	"english/lib"
 	"errors"
 	"strings"
 )
@@ -44,7 +44,7 @@ func (lu *SSOAuthUsecaseImpl) RedirectOAuthConsent(req *dto.RedirectOAuthConsent
 		return nil, errors.New("invalid idP name")
 	}
 
-	state, err := algo.GenerateULID()
+	state, err := lib.GenerateULID()
 	if err != nil {
 		return nil, err
 	}

@@ -1,7 +1,6 @@
 package controller
 
 import (
-	"english/algo"
 	"english/cmd/presentation/errhandle"
 	"english/cmd/usecase"
 	"english/cmd/usecase/dto"
@@ -10,9 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -295,7 +292,7 @@ func (uc *UserGinController) UpdateProfile(c *gin.Context) {
 }
 
 func (uc *UserGinController) UpdateProfileImg(c *gin.Context) {
-	file, err := c.FormFile("image")
+	fileHeader, err := c.FormFile("image")
 	if err != nil {
 		errhandle.HandleErrorJSON(myerror.ErrFormFileNotFound, c)
 		return
@@ -307,53 +304,20 @@ func (uc *UserGinController) UpdateProfileImg(c *gin.Context) {
 		return
 	}
 
-	updateProfileImgReq := &dto.UpdateProfileImgRequest{
-		Id:   id,
-		File: file,
+	input := &dto.UpdateProfileImgInput{
+		Id:         id,
+		FileHeader: fileHeader,
 	}
-	updateProfileImgResp, err := uc.upu.Update(updateProfileImgReq)
+
+	output, err := uc.upu.Update(input)
 	if err != nil {
 		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
-	if config.GoEnv() == "dev" {
-		ulid, err := algo.GenerateULID()
-		if err != nil {
-			errhandle.HandleErrorJSON(err, c)
-			return
-		}
-
-		fileName := fmt.Sprintf("%v_%v", ulid, file.Filename)
-		dst := fmt.Sprintf("./static/img/profile/%v", fileName)
-
-		// ローカルに画像を保存
-		if err := c.SaveUploadedFile(file, dst); err != nil {
-			errhandle.HandleErrorJSON(err, c)
-			return
-		}
-
-		// 前の画像があれば削除
-		if updateProfileImgResp.ProfileImgURL != "" {
-			params := strings.Split(updateProfileImgResp.ProfileImgURL, "/")
-			preFileName := params[len(params)-1]
-			preFilePath := fmt.Sprintf("./static/img/profile/%v", preFileName)
-
-			if err := os.Remove(preFilePath); err != nil {
-				errhandle.HandleErrorJSON(err, c)
-				return
-			}
-		}
-
-		updateProfileImgResp.ProfileImgURL = fmt.Sprintf("%v/img/profile/%v", config.FilePath(), fileName)
-	} else {
-		// S3、またはCloud Storageでの保存処理
-
-	}
-
 	updateUserReq := &dto.UpdateUserRequest{
 		Id:    id,
-		Image: updateProfileImgResp.ProfileImgURL,
+		Image: output.ProfileImgURL,
 	}
 
 	updateUserResp, err := uc.uu.Update(updateUserReq)

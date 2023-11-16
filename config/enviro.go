@@ -103,3 +103,7 @@ func APIKey(apiName APIName) string {
 func SearchEngineId() string {
 	return os.Getenv("SEARCH_ENGINE_ID")
 }
+
+func GCSServiceKey() string {
+	return os.Getenv("GCS_SERVICE_KEY")
+}

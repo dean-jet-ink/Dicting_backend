@@ -1,0 +1,43 @@
+steps:
+  # イメージのビルド
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "${_REPO_IMAGE_PATH}",
+        "f",
+        "${_BUILD_CONTEXT}",
+        "${_DOCKERFILE_PATH}",
+      ]
+
+  # ビルドしたイメージをArtifact Registoryにpush
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "${_REPO_IMAGE_PATH}"]
+
+  # Artifact RegistoryにpushしたイメージをCloud Runにdeploy
+  - name: "gcr.io/cloud-builders/gcloud"
+    args:
+      [
+        "run",
+        "deploy",
+        "${_SERVICE_NAME}",
+        "--image",
+        "${_REPO_IMAGE_PATH}",
+        "--region",
+        "${_DEPLOY_REGION}",
+        "--platform",
+        "managed",
+        "--allow-unauthenticated",
+      ]
+
+# デフォルト値を設定。実際の値はコンソールのCloud buildトリガー設定、代入変数から登録
+substitutions:
+  _AR_HOSTNAME: asia-northeast1-docker.pkg.dev
+  _REPO_NAME: my-repo
+  _IMAGE_NAME: my-image:latest
+  _REPO_IMAGE_PATH: "${_AR_HOSTNAME}/${PROJECT_ID}/${_REPO_NAME}/${_IMAGE_NAME}"
+  _BUILD_CONTEXT: .
+  _DOCKERFILE_PATH: ./docker/Dockerfile
+  _SERVICE_NAME: my-service
+  _DEPLOY_REGION: asia-northeast1

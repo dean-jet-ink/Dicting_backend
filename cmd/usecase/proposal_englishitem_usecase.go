@@ -8,7 +8,6 @@ import (
 )
 
 type ProposalEnglishItemUsecase interface {
-	// Proposal(req *dto.ProposalEnglishItemRequest) *dto.ProposalEnglishItemResponse
 	Proposal(req *dto.ProposalEnglishItemRequest) (*dto.ProposalEnglishItemResponse, error)
 	ProposalTranslation(req *dto.ProposalEnglishItemRequest) (string, error)
 	ProposalExplanation(req *dto.ProposalEnglishItemRequest) (string, error)

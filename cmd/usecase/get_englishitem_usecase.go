@@ -8,7 +8,7 @@ import (
 
 type GetEnglishItemUsecase interface {
 	GetEnglishItemInfoByUserId(userId string) (*dto.GetEnglishItemsResponse, error)
-	GetByUserIdAndContent(userId, content string) (*dto.GetEnglishItemResponse, error)
+	GetById(id string) (*dto.GetEnglishItemResponse, error)
 }
 
 type GetEnglishItemUsecaseImpl struct {
@@ -52,8 +52,8 @@ func (u *GetEnglishItemUsecaseImpl) GetEnglishItemInfoByUserId(userId string) (*
 	return resp, nil
 }
 
-func (u *GetEnglishItemUsecaseImpl) GetByUserIdAndContent(userId, content string) (*dto.GetEnglishItemResponse, error) {
-	englishItem, err := u.er.FindByUserIdAndContent(userId, content)
+func (u *GetEnglishItemUsecaseImpl) GetById(id string) (*dto.GetEnglishItemResponse, error) {
+	englishItem, err := u.er.FindById(id)
 	if err != nil {
 		return nil, err
 	}

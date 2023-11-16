@@ -1,5 +1,13 @@
 package model
 
+import "io"
+
+type ImgFile struct {
+	Body     io.ReadCloser
+	FileName string
+	URL      string
+}
+
 type Img struct {
 	id          string
 	url         string

@@ -1,4 +1,4 @@
-package algo
+package lib
 
 import (
 	"math/rand"
