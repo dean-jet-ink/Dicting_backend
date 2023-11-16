@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NewGinRouter(uc controller.UserController, ec controller.EnglishItemController) *gin.Engine {
+func NewGinRouter(uc controller.UserController, ec controller.EnglishItemController, oc controller.OutputController) *gin.Engine {
 	router := gin.New()
 	mid := middleware.NewGinMiddleware()
 
@@ -49,14 +49,22 @@ func NewGinRouter(uc controller.UserController, ec controller.EnglishItemControl
 	router.PUT("/user/profile-img", uc.UpdateProfileImg)
 
 	router.GET("/english", ec.GetByUserId)
-	router.GET("/english/:content", ec.GetByUserIdAndContent)
+	router.GET("/english/:id", ec.GetById)
 	router.GET("/english/proposal", ec.Proposal)
 	router.GET("/english/proposal/translation", ec.ProposalTranslation)
 	router.GET("/english/proposal/explanation", ec.ProposalExplanation)
 	router.GET("/english/proposal/example", ec.ProposalExample)
+	router.GET("/english/required-exp", ec.GetRequiredExp)
 	router.POST("/english", ec.Create)
 	router.PUT("/english", ec.Update)
 	router.DELETE("/english/:id", ec.Delete)
+
+	router.GET("/english/output", oc.GetQuestion)
+	router.POST("/english/output", oc.AnswerQuestions)
+	router.PUT("/english/output", oc.CreateOutput)
+	router.GET("/english/output/times/:englishItemId", oc.GetOutputTimes)
+	router.GET("/english/outputs", oc.GetOutputs)
+	router.DELETE("/english/output", oc.DeleteOutput)
 
 	return router
 }

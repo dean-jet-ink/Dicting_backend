@@ -1,10 +1,10 @@
 package usecase
 
 import (
-	"english/algo"
 	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
 	"english/cmd/usecase/dto"
+	"english/lib"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -24,7 +24,7 @@ func NewSignupUsecase(ur repository.UserRepository) SignupUsecase {
 }
 
 func (su *SignupUsecaseImpl) Signup(req *dto.SignupRequest, isSSO bool) (string, error) {
-	ulid, err := algo.GenerateULID()
+	ulid, err := lib.GenerateULID()
 	if err != nil {
 		return "", err
 	}

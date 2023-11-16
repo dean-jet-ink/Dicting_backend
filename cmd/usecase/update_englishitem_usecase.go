@@ -1,11 +1,11 @@
 package usecase
 
 import (
-	"english/algo"
 	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
 	"english/cmd/usecase/dto"
 	"english/cmd/usecase/validator"
+	"english/lib"
 )
 
 type UpdateEnglishItemUsecase interface {
@@ -31,7 +31,7 @@ func (u *UpdateEnglishItemUsecaseImpl) Update(req *dto.UpdateEnglishItemRequest)
 	for _, reqImg := range req.Imgs {
 		img := model.NewImg(reqImg.Id, reqImg.URL, reqImg.IsThumbnail)
 
-		ulid, err := algo.GenerateULID()
+		ulid, err := lib.GenerateULID()
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (u *UpdateEnglishItemUsecaseImpl) Update(req *dto.UpdateEnglishItemRequest)
 	examples := []*model.Example{}
 
 	for _, example := range req.Examples {
-		ulid, err := algo.GenerateULID()
+		ulid, err := lib.GenerateULID()
 		if err != nil {
 			return err
 		}

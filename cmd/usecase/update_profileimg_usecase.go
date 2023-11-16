@@ -1,39 +1,59 @@
 package usecase
 
 import (
+	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
 	"english/cmd/usecase/dto"
-	"english/config"
+	"english/lib"
 )
 
 type UpdateProfileImgUsecase interface {
-	Update(req *dto.UpdateProfileImgRequest) (*dto.UpdateProfileImgResponse, error)
+	Update(req *dto.UpdateProfileImgInput) (*dto.UpdateProfileImgOutput, error)
 }
 
 type UpdateProfileImgUsecaseImpl struct {
 	ur repository.UserRepository
+	fr repository.FileStorageRepository
 }
 
-func NewUpdateProfileImgUsecase(ur repository.UserRepository) UpdateProfileImgUsecase {
+func NewUpdateProfileImgUsecase(ur repository.UserRepository, fr repository.FileStorageRepository) UpdateProfileImgUsecase {
 	return &UpdateProfileImgUsecaseImpl{
 		ur: ur,
+		fr: fr,
 	}
 }
 
-func (upu *UpdateProfileImgUsecaseImpl) Update(req *dto.UpdateProfileImgRequest) (*dto.UpdateProfileImgResponse, error) {
-	resp := &dto.UpdateProfileImgResponse{}
+func (u *UpdateProfileImgUsecaseImpl) Update(input *dto.UpdateProfileImgInput) (*dto.UpdateProfileImgOutput, error) {
 
-	user, err := upu.ur.FindById(req.Id)
+	user, err := u.ur.FindById(input.Id)
 	if err != nil {
 		return nil, err
 	}
 
-	if config.GoEnv() == "dev" {
-		resp.ProfileImgURL = user.ProfileImageURL()
-		return resp, nil
+	preFile := user.ProfileImageURL()
+
+	file, err := input.FileHeader.Open()
+	if err != nil {
+		return nil, err
 	}
 
-	// S3またはCloud Storageでの処理
+	ulid, err := lib.GenerateULID()
+	if err != nil {
+		return nil, err
+	}
+
+	imgFile := &model.ImgFile{
+		Body:     file,
+		FileName: ulid,
+	}
+
+	if err := u.fr.Upload(imgFile, preFile); err != nil {
+		return nil, err
+	}
+
+	resp := &dto.UpdateProfileImgOutput{
+		ProfileImgURL: imgFile.URL,
+	}
 
 	return resp, nil
 }

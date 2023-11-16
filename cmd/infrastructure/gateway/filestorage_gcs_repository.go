@@ -1,15 +1,16 @@
 package gateway
 
 import (
-	"english/algo"
+	"context"
 	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
+	"english/cmd/infrastructure/client"
 	"english/config"
+	"english/lib"
 	"english/myerror"
 	"errors"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"strings"
@@ -17,20 +18,22 @@ import (
 )
 
 type FileStorageGCSRepository struct {
-	// GCSクライアント
+	gcsClient *client.GCSClient
 }
 
-type ImgFile struct {
-	Body     io.ReadCloser
-	FileName string
-	URL      string
+func NewFileStorageGCSRepository(gcsClient *client.GCSClient) repository.FileStorageRepository {
+	return &FileStorageGCSRepository{
+		gcsClient: gcsClient,
+	}
 }
 
-func NewFileStorageGCSRepository() repository.FileStorageRepository {
-	return &FileStorageGCSRepository{}
-}
+func (r *FileStorageGCSRepository) Upload(file *model.ImgFile, preImg string) error {
+	ctx := context.Background()
 
-func (r *FileStorageGCSRepository) Upload(file *multipart.FileHeader, preImg *model.Img) error {
+	r.uploadFile(ctx, file, false)
+
+	r.deleteImg(ctx, preImg)
+
 	return nil
 }
 
@@ -39,9 +42,36 @@ func (r *FileStorageGCSRepository) UploadImgs(imgs []*model.Img, preImgs []*mode
 
 	errChan := make(chan error)
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// GCSのドメインを持つURL、またはローカルドメインを持つURLの場合、既にアップロード済みの画像であるため除外
+	filteredImgs := []*model.Img{}
+	gcsPath := fmt.Sprintf("https://storage.cloud.google.com/%v", client.BUCKET_NAME)
 	for _, img := range imgs {
+		if !strings.Contains(img.URL(), gcsPath) &&
+			!strings.Contains(img.URL(), config.FilePath()) {
+			filteredImgs = append(filteredImgs, img)
+		}
+	}
+
+	// imgsのURLと一致するpreImgについては削除しないため、除外
+	imgSet := map[string]bool{}
+	for _, img := range imgs {
+		imgSet[img.URL()] = true
+	}
+
+	preURLs := []string{}
+	for _, preImg := range preImgs {
+		url := preImg.URL()
+		if !imgSet[url] {
+			preURLs = append(preURLs, url)
+		}
+	}
+
+	for _, img := range filteredImgs {
 		wg.Add(1)
-		go r.fetchFileFromURL(wg, img, errChan)
+		go r.uploadFileFromURL(ctx, wg, img, errChan)
 	}
 
 	go func() {
@@ -50,16 +80,12 @@ func (r *FileStorageGCSRepository) UploadImgs(imgs []*model.Img, preImgs []*mode
 	}()
 
 	for err := range errChan {
+		cancel()
 		return err
 	}
 
-	var urls []string
-
-	for _, img := range preImgs {
-		urls = append(urls, img.URL())
-	}
-
-	if err := r.deleteImgs(urls); err != nil {
+	if err := r.deleteImgs(ctx, preURLs); err != nil {
+		cancel()
 		return err
 	}
 
@@ -73,14 +99,14 @@ func (r *FileStorageGCSRepository) DeleteImgs(imgs []*model.Img) error {
 		urls = append(urls, img.URL())
 	}
 
-	if err := r.deleteImgs(urls); err != nil {
+	if err := r.deleteImgs(context.Background(), urls); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *FileStorageGCSRepository) fetchFileFromURL(wg *sync.WaitGroup, img *model.Img, errChan chan error) {
+func (r *FileStorageGCSRepository) uploadFileFromURL(ctx context.Context, wg *sync.WaitGroup, img *model.Img, errChan chan error) {
 	defer wg.Done()
 
 	resp, err := http.Get(img.URL())
@@ -100,7 +126,7 @@ func (r *FileStorageGCSRepository) fetchFileFromURL(wg *sync.WaitGroup, img *mod
 		errChan <- err
 		return
 	}
-	ulid, err := algo.GenerateULID()
+	ulid, err := lib.GenerateULID()
 	if err != nil {
 		errChan <- err
 		return
@@ -108,35 +134,44 @@ func (r *FileStorageGCSRepository) fetchFileFromURL(wg *sync.WaitGroup, img *mod
 
 	fileName := fmt.Sprintf("%v%v", ulid, ext)
 
-	imgFile := &ImgFile{
+	imgFile := &model.ImgFile{
 		Body:     resp.Body,
 		FileName: fileName,
 	}
 
-	if err := r.uploadFile(imgFile); err != nil {
+	if err := r.uploadFile(ctx, imgFile, true); err != nil {
 		errChan <- err
 	}
 
 	img.SetURL(imgFile.URL)
 }
 
-func (r *FileStorageGCSRepository) uploadFile(file *ImgFile) error {
+func (r *FileStorageGCSRepository) uploadFile(ctx context.Context, file *model.ImgFile, isEnglish bool) error {
 	defer file.Body.Close()
 
-	if config.GoEnv() == "dev" {
-		out, err := os.Create(fmt.Sprintf("./static/img/english/%v", file.FileName))
-		if err != nil {
-			return err
-		}
+	var path string
 
-		_, err = io.Copy(out, file.Body)
-		if err != nil {
-			return err
-		}
-
-		file.URL = fmt.Sprintf("%v/img/english/%v", config.FilePath(), file.FileName)
+	if isEnglish {
+		path = "english"
 	} else {
-		// GCS
+		path = "user"
+	}
+
+	if config.GoEnv() == "dev" {
+		out, err := os.Create(fmt.Sprintf("./static/img/%v/%v", path, file.FileName))
+		if err != nil {
+			return err
+		}
+
+		if _, err = io.Copy(out, file.Body); err != nil {
+			return err
+		}
+
+		file.URL = fmt.Sprintf("%v/img/%v/%v", config.FilePath(), path, file.FileName)
+	} else {
+		if err := r.gcsClient.Save(ctx, file); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -155,19 +190,27 @@ func getExtensionByContentType(contentType string) (string, error) {
 	}
 }
 
-func (r *FileStorageGCSRepository) deleteImgs(urls []string) error {
-	if config.GoEnv() == "dev" {
-		for _, url := range urls {
-			params := strings.Split(url, "/")
-			preFileName := params[len(params)-1]
-			preFilePath := fmt.Sprintf("./static/img/english/%v", preFileName)
+func (r *FileStorageGCSRepository) deleteImgs(ctx context.Context, urls []string) error {
+	for _, url := range urls {
+		r.deleteImg(ctx, url)
+	}
 
-			if err := os.Remove(preFilePath); err != nil {
-				return err
-			}
+	return nil
+}
+
+func (r *FileStorageGCSRepository) deleteImg(ctx context.Context, url string) error {
+	if config.GoEnv() == "dev" {
+		params := strings.Split(url, "/")
+		preFileName := params[len(params)-1]
+		preFilePath := fmt.Sprintf("./static/img/english/%v", preFileName)
+
+		if err := os.Remove(preFilePath); err != nil {
+			return err
 		}
 	} else {
-		// GCS
+		if err := r.gcsClient.Delete(ctx, url); err != nil {
+			return err
+		}
 	}
 
 	return nil

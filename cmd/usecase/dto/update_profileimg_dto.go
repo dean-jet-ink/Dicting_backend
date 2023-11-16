@@ -2,11 +2,11 @@ package dto
 
 import "mime/multipart"
 
-type UpdateProfileImgRequest struct {
-	Id   string
-	File *multipart.FileHeader `validate:"required"`
+type UpdateProfileImgInput struct {
+	Id         string
+	FileHeader *multipart.FileHeader `validate:"required"`
 }
 
-type UpdateProfileImgResponse struct {
+type UpdateProfileImgOutput struct {
 	ProfileImgURL string `json:"profile_img_url"`
 }

@@ -1,11 +1,11 @@
 package usecase
 
 import (
-	"english/algo"
 	"english/cmd/domain/model"
 	"english/cmd/domain/repository"
 	"english/cmd/usecase/dto"
 	"english/cmd/usecase/validator"
+	"english/lib"
 )
 
 type CreateEnglishItemUsecase interface {
@@ -31,7 +31,7 @@ func (u *CreateEnglishItemUsecaseImpl) Create(req *dto.CreateEnglishItemRequest)
 	for _, reqImg := range req.Imgs {
 		img := model.NewImg(reqImg.Id, reqImg.URL, reqImg.IsThumbnail)
 
-		ulid, err := algo.GenerateULID()
+		ulid, err := lib.GenerateULID()
 		if err != nil {
 			return err
 		}
@@ -46,7 +46,7 @@ func (u *CreateEnglishItemUsecaseImpl) Create(req *dto.CreateEnglishItemRequest)
 
 	examples := []*model.Example{}
 	for _, example := range req.Examples {
-		ulid, err := algo.GenerateULID()
+		ulid, err := lib.GenerateULID()
 		if err != nil {
 			return err
 		}
@@ -55,7 +55,7 @@ func (u *CreateEnglishItemUsecaseImpl) Create(req *dto.CreateEnglishItemRequest)
 		examples = append(examples, exampleDomain)
 	}
 
-	ulid, err := algo.GenerateULID()
+	ulid, err := lib.GenerateULID()
 	if err != nil {
 		return err
 	}

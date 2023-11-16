@@ -19,24 +19,27 @@ type EnglishItemController interface {
 	ProposalExplanation(c *gin.Context)
 	ProposalExample(c *gin.Context)
 	GetByUserId(c *gin.Context)
-	GetByUserIdAndContent(c *gin.Context)
+	GetById(c *gin.Context)
+	GetRequiredExp(c *gin.Context)
 }
 
 type EnglishItemGinController struct {
-	proposalUse usecase.ProposalEnglishItemUsecase
-	createUse   usecase.CreateEnglishItemUsecase
-	getUse      usecase.GetEnglishItemUsecase
-	updateUse   usecase.UpdateEnglishItemUsecase
-	deleteUse   usecase.DeleteEnglishItemUsecase
+	proposalUse       usecase.ProposalEnglishItemUsecase
+	createUse         usecase.CreateEnglishItemUsecase
+	getUse            usecase.GetEnglishItemUsecase
+	updateUse         usecase.UpdateEnglishItemUsecase
+	deleteUse         usecase.DeleteEnglishItemUsecase
+	getRequiredExpUse usecase.GetRequiredExpUsecase
 }
 
-func NewEnglishItemController(proposalUse usecase.ProposalEnglishItemUsecase, createUse usecase.CreateEnglishItemUsecase, getUse usecase.GetEnglishItemUsecase, updateUse usecase.UpdateEnglishItemUsecase, deleteUse usecase.DeleteEnglishItemUsecase) EnglishItemController {
+func NewEnglishItemController(proposalUse usecase.ProposalEnglishItemUsecase, createUse usecase.CreateEnglishItemUsecase, getUse usecase.GetEnglishItemUsecase, updateUse usecase.UpdateEnglishItemUsecase, deleteUse usecase.DeleteEnglishItemUsecase, getRequiredExpUse usecase.GetRequiredExpUsecase) EnglishItemController {
 	return &EnglishItemGinController{
-		proposalUse: proposalUse,
-		createUse:   createUse,
-		getUse:      getUse,
-		updateUse:   updateUse,
-		deleteUse:   deleteUse,
+		proposalUse:       proposalUse,
+		createUse:         createUse,
+		getUse:            getUse,
+		updateUse:         updateUse,
+		deleteUse:         deleteUse,
+		getRequiredExpUse: getRequiredExpUse,
 	}
 }
 
@@ -217,24 +220,24 @@ func (ec *EnglishItemGinController) GetByUserId(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (ec *EnglishItemGinController) GetByUserIdAndContent(c *gin.Context) {
-	content := c.Param("content")
-	if content == "" {
+func (ec *EnglishItemGinController) GetById(c *gin.Context) {
+	id := c.Param("id")
+	if id == "" {
 		errhandle.HandleErrorJSON(myerror.ErrValidation, c)
 		return
 	}
 
-	userId, err := userId(c)
-	if err != nil {
-		errhandle.HandleErrorJSON(err, c)
-		return
-	}
-
-	resp, err := ec.getUse.GetByUserIdAndContent(userId, content)
+	resp, err := ec.getUse.GetById(id)
 	if err != nil {
 		errhandle.HandleErrorJSON(err, c)
 		return
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+func (ec *EnglishItemGinController) GetRequiredExp(c *gin.Context) {
+	output := ec.getRequiredExpUse.GetRequiredExp()
+
+	c.JSON(http.StatusOK, output)
 }

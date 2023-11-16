@@ -8,4 +8,6 @@ type ChatAIAPI interface {
 	GetTranslation(content string) (string, error)
 	GetExplanation(content string) (string, error)
 	GetExample(content string) (*model.Example, error)
+	GetQuestion(content string) (string, error)
+	GetAdvice(answers []*model.Output) error
 }

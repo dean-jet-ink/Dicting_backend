@@ -22,6 +22,11 @@ const (
 	Mastered   = Proficiency("Mastered")
 )
 
+const (
+	UnderstandExp uint = 20
+	MasteredExp   uint = 100
+)
+
 func NewEnglishItem(id, content string, translations []string, enExplanation string, examples []*Example, imgs []*Img, userId string, proficiency Proficiency, exp uint) *EnglishItem {
 	return &EnglishItem{
 		id:            id,
@@ -32,6 +37,17 @@ func NewEnglishItem(id, content string, translations []string, enExplanation str
 		imgs:          imgs,
 		userId:        userId,
 		proficiency:   proficiency,
+	}
+}
+
+func (e *EnglishItem) CheckExp() {
+	switch {
+	case MasteredExp <= e.exp:
+		e.proficiency = Mastered
+	case UnderstandExp <= e.exp:
+		e.proficiency = Understand
+	default:
+		e.proficiency = Learning
 	}
 }
 
@@ -112,5 +128,11 @@ func (e *EnglishItem) SetProficiency(proficiency Proficiency) {
 }
 
 func (e *EnglishItem) SetExp(exp uint) {
-	e.exp = exp
+	maxExp := UnderstandExp + MasteredExp
+
+	if exp > maxExp {
+		e.exp = maxExp
+	} else {
+		e.exp = exp
+	}
 }
