@@ -6,7 +6,7 @@ steps:
         "build",
         "-t",
         "${_REPO_IMAGE_PATH}",
-        "f",
+        "-f",
         "${_BUILD_CONTEXT}",
         "${_DOCKERFILE_PATH}",
       ]
