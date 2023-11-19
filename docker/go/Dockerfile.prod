@@ -4,7 +4,7 @@ WORKDIR /builder
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN go run migrate/migrate.go
+RUN GO_ENV=prod go run migrate/migrate.go
 
 # alpineベースのためCGOを無効にする必要はないが
 # 将来的に環境が変更された場合の保険として設定

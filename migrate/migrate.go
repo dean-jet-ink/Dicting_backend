@@ -8,7 +8,9 @@ import (
 )
 
 func init() {
-	config.SetLogger(config.LogFileName())
+	if config.GoEnv() == "dev" {
+		config.SetLogger(config.LogFileName())
+	}
 }
 
 func main() {
