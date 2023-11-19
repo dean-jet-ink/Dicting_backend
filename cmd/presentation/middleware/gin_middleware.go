@@ -48,7 +48,7 @@ func (gm *GinMiddleware) JWTMiddleware(c *gin.Context) {
 			return nil, fmt.Errorf("%v '%w'", myerror.ErrUnexpectedSigningMethod, errors.New(token.Header["alg"].(string)))
 		}
 
-		return []byte(config.Secret()), nil
+		return []byte(config.JWTSecret()), nil
 	}
 
 	token, err := jwt.Parse(tokenStr, keyFunc)

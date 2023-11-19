@@ -50,7 +50,7 @@ func (r *FileStorageGCSRepository) UploadImgs(imgs []*model.Img, preImgs []*mode
 	gcsPath := fmt.Sprintf("https://storage.cloud.google.com/%v", client.BUCKET_NAME)
 	for _, img := range imgs {
 		if !strings.Contains(img.URL(), gcsPath) &&
-			!strings.Contains(img.URL(), config.FilePath()) {
+			!strings.Contains(img.URL(), config.StaticFilePath()) {
 			filteredImgs = append(filteredImgs, img)
 		}
 	}
@@ -167,7 +167,7 @@ func (r *FileStorageGCSRepository) uploadFile(ctx context.Context, file *model.I
 			return err
 		}
 
-		file.URL = fmt.Sprintf("%v/img/%v/%v", config.FilePath(), path, file.FileName)
+		file.URL = fmt.Sprintf("%v/img/%v/%v", config.StaticFilePath(), path, file.FileName)
 	} else {
 		if err := r.gcsClient.Save(ctx, file); err != nil {
 			return err
