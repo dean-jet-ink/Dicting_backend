@@ -52,16 +52,16 @@ func FrontEndURL() string {
 	return os.Getenv("FE_URL")
 }
 
-func Secret() string {
-	return os.Getenv("SECRET")
+func JWTSecret() string {
+	return os.Getenv("JWTSECRET")
 }
 
 func LogFileName() string {
-	return os.Getenv("LOG_FILE")
+	return os.Getenv("LOG_FILE_NAME")
 }
 
-func FilePath() string {
-	return os.Getenv("FILE_PATH")
+func StaticFilePath() string {
+	return os.Getenv("STATIC_FILE_PATH")
 }
 
 func MySQLDBName() string {

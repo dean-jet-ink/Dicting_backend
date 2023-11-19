@@ -35,7 +35,7 @@ func (u *User) CreateJWT(expireSec int) (string, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// 環境変数のSECRETを使用し署名
-	jwtToken, err := token.SignedString([]byte(config.Secret()))
+	jwtToken, err := token.SignedString([]byte(config.JWTSecret()))
 	if err != nil {
 		return "", err
 	}

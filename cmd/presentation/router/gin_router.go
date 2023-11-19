@@ -24,7 +24,6 @@ func NewGinRouter(uc controller.UserController, ec controller.EnglishItemControl
 		AllowCredentials: true,
 	}))
 
-	// 静的ファイルの設定
 	router.Static("/static", "./static")
 
 	// パニック時のミドルウェア
