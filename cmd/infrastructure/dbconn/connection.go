@@ -11,12 +11,13 @@ import (
 
 func NewDB() *gorm.DB {
 	myConf := mysql.Config{
-		DBName:    config.MySQLDBName(),
-		User:      config.MySQLUser(),
-		Passwd:    config.MySQLPass(),
-		Addr:      config.MySQLHost(),
-		Net:       "tcp",
-		ParseTime: true,
+		DBName:               config.MySQLDBName(),
+		User:                 config.MySQLUser(),
+		Passwd:               config.MySQLPass(),
+		Addr:                 config.MySQLHost(),
+		Net:                  "tcp",
+		ParseTime:            true,
+		AllowNativePasswords: true,
 	}
 
 	db, err := gorm.Open(gormMysql.Open(myConf.FormatDSN()), &gorm.Config{})
