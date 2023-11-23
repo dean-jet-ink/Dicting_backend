@@ -15,16 +15,12 @@ func NewDB() *gorm.DB {
 		User:                 config.MySQLUser(),
 		Passwd:               config.MySQLPass(),
 		Addr:                 config.MySQLHost(),
-		Net:                  "tcp",
+		Net:                  config.DBSocketType(),
 		ParseTime:            true,
 		AllowNativePasswords: true,
 	}
 
-	dsn := myConf.FormatDSN()
-
-	log.Println(dsn)
-
-	db, err := gorm.Open(gormMysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(gormMysql.Open(myConf.FormatDSN()), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect DB: %s", err)
 	}

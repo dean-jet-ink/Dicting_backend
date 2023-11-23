@@ -80,6 +80,10 @@ func MySQLHost() string {
 	return os.Getenv("MYSQL_HOST")
 }
 
+func DBSocketType() string {
+	return os.Getenv("DB_SOCKET_TYPE")
+}
+
 func OAuthRedirectURL() string {
 	return os.Getenv("OAUTH_REDIRECT_URL")
 }
