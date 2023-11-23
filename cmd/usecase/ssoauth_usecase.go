@@ -22,7 +22,7 @@ type SSOAuthUsecaseImpl struct {
 }
 
 func NewSSOAuthUsecase(ur repository.UserRepository) SSOAuthUsecase {
-	idPNames := []config.IdPName{config.GOOGLE, config.LINE}
+	idPNames := []config.IdPName{config.GOOGLE}
 
 	idPs := map[string]*model.IdP{}
 
