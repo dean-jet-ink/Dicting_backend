@@ -20,7 +20,11 @@ func NewDB() *gorm.DB {
 		AllowNativePasswords: true,
 	}
 
-	db, err := gorm.Open(gormMysql.Open(myConf.FormatDSN()), &gorm.Config{})
+	dsn := myConf.FormatDSN()
+
+	log.Println(dsn)
+
+	db, err := gorm.Open(gormMysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect DB: %s", err)
 	}
