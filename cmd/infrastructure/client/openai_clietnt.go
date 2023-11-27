@@ -26,7 +26,7 @@ func NewOpenAIAPI() api.ChatAIAPI {
 
 func (c *OpenAIClient) createChatCompletion(ctx context.Context, prompt string) (string, error) {
 	req := openai.ChatCompletionRequest{
-		Model: openai.GPT3Dot5Turbo,
+		Model: openai.GPT4,
 		Messages: []openai.ChatCompletionMessage{
 			{
 				Role:    openai.ChatMessageRoleUser,
